@@ -234,29 +234,6 @@ double dynamics::f_omegae(double omega_e){
 
 
 
-int main(int argc, char **argv)
-{
-  ros::init(argc, argv, "hi");
-  ros::NodeHandle n;
-   ros::Rate loop_rate(5);
-
-   std_msgs::String msg;
-   std::stringstream ss;
-
-
-
-//  while (ros::ok())
-//  {
-//    ros::spinOnce();
-//    loop_rate.sleep();
-//
-//  }
-
-
-  return 0;
-}
-
-
 
 
 

@@ -187,16 +187,30 @@ include_directories(
 ## Add folders to be run by python nosetests
 # catkin_add_nosetests(test)
 
+set(DYNAMICS_VEHICLE_SRC
+  src/dynamics_vehicle.cpp
+ )
+
 
 include_directories(include ${catkin_INCLUDE_DIRS})
 
-add_executable(dynamics src/dynamics_vehicle.cpp)
-target_link_libraries(dynamics ${catkin_LIBRARIES})
-add_dependencies(dynamics vehicle_dynamics)
+#add_executable(dynamics src/dynamics_vehicle.cpp)
+#target_link_libraries(dynamics ${catkin_LIBRARIES})
+#add_dependencies(dynamics vehicle_dynamics)
 
+
+#add_executable(dynamics ${DYNAMICS_VEHICLE_SRC} src/dynamics_vehicle.cpp)
+#target_link_libraries(dynamics ${catkin_LIBRARIES})
+#add_dependencies(dynamics ${catkin_EXPORTED_TARGETS} ${${PROJECT_NAME}_EXPORTED_TARGETS})
  
  
+#add_executable(test_dynamics src/test_dynamics_vehicle.cpp)
+#target_link_libraries(test_dynamics ${catkin_LIBRARIES})
+#add_dependencies(test_dynamics vehicle_dynamics)
 
+add_executable(test_dynamics ${DYNAMICS_VEHICLE_SRC} src/test_dynamics_vehicle.cpp)
+target_link_libraries(test_dynamics ${catkin_LIBRARIES})
+add_dependencies(test_dynamics ${catkin_EXPORTED_TARGETS} ${${PROJECT_NAME}_EXPORTED_TARGETS})
 
 
 
