@@ -143,6 +143,16 @@ void dynamics::diff_equation(){
 
 
 	//brake for XC90:
+	double T_req = T_bmax*0.01*B_ped;
+
+    //dot of T_b:
+	T_b_dot[0] = kb*(T_req-T_b[0]);
+	T_b_dot[1] = kb*(T_req-T_b[1]);
+
+
+
+
+
 
 
 

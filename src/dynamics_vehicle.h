@@ -60,6 +60,10 @@ private:
       double a_xupper;
       double a_xlower;
 
+      //relating to brake:
+      double T_bmax;
+      double kb;
+
 
       //input:
       double A_ped;   //pedal
@@ -126,6 +130,7 @@ private:
 
 	   //braking torque:
 	   double T_b[2];  //front and rear wheel
+	   double T_b_dot[2]; //dot of T_b
 
 
 
