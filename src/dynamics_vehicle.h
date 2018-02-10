@@ -18,7 +18,6 @@
 #include "std_msgs/String.h"
 
 
-//#include "sensor_msgs/Imu.h"
 
 
 
@@ -50,6 +49,9 @@ private:
       double Izz;
       double Je;
 
+      //the fraction by which the engine torque is reduced
+      double Efactor;
+
       int i_final;
       int i_gear;
       double eta_tr;
@@ -64,6 +66,9 @@ private:
       double T_bmax;
       double kb;
 
+      //time step:
+      double T_samp;
+
 
       //input:
       double A_ped;   //pedal
@@ -73,64 +78,32 @@ private:
 
 
 	//the functions and other variables:
-
-
 	   void diff_equation(void);
-
+	   void integrator(void);
        double max_dynamics(double a, double b);
        double abs_dynamics(double a);
        double f_omegae(double omega_e);
-
-
 
 	   //the velocity of the vehicle, expressed in the body frame of the vehicle
 	   double v_body[3];
 	   double omega_body[3];  //angular velocity, body frame
 
-	   //the velocity of the vehicle, expressed in the wheel frame
-	   double vb_wheel[3][2];
-
-	   double omega_w[2];  //the angular velocity of the wheel
-
-	   double delta[2];  //the steering angle
-
-
-
-	   //slip
-	   double sx[2];
-	   double sy[2];
-	   double sxy[2];
-
-	   double f_sxy[2];
-	   double Fxy[2];
-	   double Fz[2];
-	   double Fw[3][2];  //force expressed in wheel frame
-	   double Fv[3][2];  //force expressed in body frame
-
-	   double Fx; //total force
-	   double Fy;
-	   double F_d[2];
-	   double F_g[2];
-
-
-	   double omega_wheel_dot[2];
 	   double vb_dot[3];  //dot of velocity of body
 	   double omegab_dot[3];  //dot of angular velocity of body
+
+	   //the angular velocity of the wheel
+	   double omega_w[2];
+
+	   //the derivative of angular velocity of the wheel
+	   double omega_wheel_dot[2];
 
 	 //  omega_wheel_dot = (T_prop - T_brk - Fw[0] * rw - T_roll);
 	   double T_prop[2];
 	   double T_brk[2];
-	   double T_roll[2];
-
-
-	   //the fraction by which the engine torque is reduecd
-	   double Efactor;
-
-	   double omega_e_dot;
 
 	   //braking torque:
-	   double T_b[2];  //front and rear wheel
-	   double T_b_dot[2]; //dot of T_b
+	   double T_b_general;
+	   double T_b_dot_general; //dot of T_b
 
 
 
