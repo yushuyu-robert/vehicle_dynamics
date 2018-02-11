@@ -11,6 +11,8 @@ find_package(catkin REQUIRED COMPONENTS
   message_generation
 )
 
+##find_package(vector REQUIRED)
+
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
 
@@ -115,6 +117,7 @@ CATKIN_DEPENDS message_runtime
 # include_directories(include)
 include_directories(
   ${catkin_INCLUDE_DIRS}
+  ${vector_INCLUDE_DIRS}
 )
 
 ## Declare a C++ library

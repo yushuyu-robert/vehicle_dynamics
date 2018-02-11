@@ -9,8 +9,12 @@
 #define DYNAMICS_VEHICLE_H_
 
 //other header files
-#include "ros/ros.h"
+//#include "ros/ros.h"
 #include "std_msgs/String.h"
+#include <algorithm>
+#include <iostream>
+#include <utility>
+#include <vector>
 
 
 //from 22nd, Jan., 2017,  the dynamics of the vehicles
@@ -25,6 +29,7 @@ public:
 	double max_dynamics(double a, double b);
 	double abs_dynamics(double a);
 	double f_omegae(double omega_e);
+	double CalcEngineMaxTorque() const;
 
 	///////////////////the parameters of the vehicle//////////////////////
 

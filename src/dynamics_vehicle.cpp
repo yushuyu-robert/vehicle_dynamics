@@ -1,7 +1,4 @@
-#include "ros/ros.h"
-#include "std_msgs/String.h"
-#include <stdlib.h>
-#include <sstream>
+
 #include "dynamics_vehicle.h"
 
 
@@ -329,7 +326,78 @@ double dynamics::f_omegae(double omega_e){
 }
 
 
+double dynamics::CalcEngineMaxTorque() const {
 
+//	std::vector<std::pair<double, double> >  const torqueLookupTable;
+//	= {
+//    std::pair<double, double>(0.0, 0.0),
+//    std::pair<double, double>(62.8318, 1660.0),
+//    std::pair<double, double>(73.3038, 1880.0),
+//    std::pair<double, double>(83.775, 2240.0),
+//    std::pair<double, double>(94.247, 2900.0),
+//    std::pair<double, double>(104.719, 3550.0),
+//    std::pair<double, double>(115.191, 3550.0),
+//    std::pair<double, double>(125.663, 3550.0),
+//    std::pair<double, double>(136.135, 3550.0),
+//    std::pair<double, double>(146.607, 3550.0),
+//    std::pair<double, double>(157.079, 3470.0),
+//    std::pair<double, double>(167.551, 3310.0),
+//    std::pair<double, double>(178.023, 3120.0),
+//    std::pair<double, double>(188.495, 2880.0),
+//    std::pair<double, double>(198.967, 2660.0),
+//    std::pair<double, double>(209.439, 1680.0),
+//    std::pair<double, double>(219.911, 0.0)
+//  };
+
+	int size = 17;
+	double torqueLookupTable[size][2] =
+	{	  {0.0, 0.0},
+			  {62.8318, 1660.0},
+			  {73.3038, 1880.0},
+			  {83.775, 2240.0},
+			  {94.247, 2900.0},
+			  {104.719, 3550.0},
+			  {115.191, 3550.0},
+			  {125.663, 3550.0},
+			  {136.135, 3550.0},
+			  {146.607, 3550.0},
+			  {157.079, 3470.0},
+			  {167.551, 3310.0},
+			  {178.023, 3120.0},
+			  {188.495, 2880.0},
+			  {198.967, 2660.0},
+			  {209.439, 1680.0},
+			  {219.911, 0.0}
+	};
+
+	double m_engineSpeed;
+
+	if (m_engineSpeed < torqueLookupTable[0][0]) {
+	return 0.0;
+	}
+
+	if (m_engineSpeed > torqueLookupTable[size- 1][0]) {
+	return 0.0;
+	}
+
+	for (uint32_t i = 0; i < size - 2; i++) {
+	double const x1 = torqueLookupTable[i][0];
+	double const x2 = torqueLookupTable[i+1][0];
+
+	if (m_engineSpeed >= x1 && m_engineSpeed < x2) {
+	  double const r = (m_engineSpeed - x1) / (x2 - x1);
+
+	  double const y1 = torqueLookupTable[i][1];
+	  double const y2 = torqueLookupTable[i+1][1];
+
+	  double const maxTorque = y1 + r * (y2 - y1);
+	  return maxTorque;
+	}
+	}
+
+	std::cerr << "Lookup failed. This should never happen." << std::endl;
+	return 0.0;
+}
 
 
 
