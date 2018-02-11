@@ -5,78 +5,59 @@
 #include "dynamics_vehicle.h"
 
 
+#include <vehicle_dynamics/vehicle_input.h>
+#include <geometry_msgs/Twist.h>
+
+void timerCallback(const ros::TimerEvent& event);
+void inputCallback(const vehicle_dynamics::vehicle_inputConstPtr& input);
+
+int test;
+
+ros::Publisher vel_pub;
+
+//vehicle dynamics
+dynamics thisdynamics;
 
 int main(int argc, char **argv)
 {
-  ros::init(argc, argv, "test_dynamics");
-  ros::NodeHandle n;
+	ros::init(argc, argv, "test_dynamics");
+	ros::NodeHandle n;
 
+	//timer:
+	ros::Timer timer_pubstate;
+	double timer = 0.01;
+	timer_pubstate = n.createTimer(ros::Duration(timer), timerCallback);  //timer used to publish state, should be at least for some minimal frequency
 
-   ros::Publisher chatter_pub = n.advertise<std_msgs::String>("chatter", 1000);
+	thisdynamics.T_samp = timer;
+	//subscribe input
+	ros::Subscriber sub = n.subscribe("input", 1, inputCallback);
 
-   std_msgs::String msg;
-   std::stringstream ss;
+	vel_pub = n.advertise<geometry_msgs::Twist>("velocity", 1);
 
-   // %Tag(LOOP_RATE)%
-     ros::Rate loop_rate(10);
-   // %EndTag(LOOP_RATE)%
-
-     /**
-      * A count of how many messages we have sent. This is used to create
-      * a unique string for each message.
-      */
-   // %Tag(ROS_OK)%
-     int count = 0;
-     while (ros::ok())
-     {
-   // %EndTag(ROS_OK)%
-       /**
-        * This is a message object. You stuff it with data, and then publish it.
-        */
-   // %Tag(FILL_MESSAGE)%
-       std_msgs::String msg;
-
-       std::stringstream ss;
-       ss << "hello world " << count;
-       msg.data = ss.str();
-
-       ROS_INFO("%s", msg.data.c_str());
-
-
-       /**
-        * The publish() function is how you send messages. The parameter
-        * is the message object. The type of this object must agree with the type
-        * given as a template parameter to the advertise<>() call, as was done
-        * in the constructor above.
-        */
-   // %Tag(PUBLISH)%
-       chatter_pub.publish(msg);
-   // %EndTag(PUBLISH)%
-
-   // %Tag(SPINONCE)%
-       ros::spinOnce();
-   // %EndTag(SPINONCE)%
-
-   // %Tag(RATE_SLEEP)%
-       loop_rate.sleep();
-   // %EndTag(RATE_SLEEP)%
-       ++count;
-     }
-
-     dynamics test;
-
-
-//  while (ros::ok())
-//  {
-//    ros::spinOnce();
-//    loop_rate.sleep();
-//
-//  }
-
-
-  return 0;
+	ros::spin();
 }
 
+
+void timerCallback(const ros::TimerEvent& event){
+
+
+	thisdynamics.integrator();
+
+	geometry_msgs::Twist msg;
+
+	msg.angular.x = msg.angular.x+test;
+
+	vel_pub.publish(msg);
+	ROS_INFO_STREAM("T_sampling: ");
+	test++;// test
+}
+
+
+void inputCallback(const vehicle_dynamics::vehicle_inputConstPtr& input){
+	thisdynamics.steering_angle = (double)input->steering;
+	thisdynamics.A_ped = (double)input->pedal;
+	thisdynamics.B_ped = (double)input->brake;
+}
 
 
 

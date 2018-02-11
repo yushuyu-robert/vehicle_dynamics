@@ -12,13 +12,21 @@
 #include "ros/ros.h"
 #include "std_msgs/String.h"
 
+
 //from 22nd, Jan., 2017,  the dynamics of the vehicles
 
 class dynamics{
 public:
 	dynamics();
-private:
-	//the parameters of the vehicle:
+
+	//the functions:
+	void diff_equation(void);
+	void integrator(void);
+	double max_dynamics(double a, double b);
+	double abs_dynamics(double a);
+	double f_omegae(double omega_e);
+
+	///////////////////the parameters of the vehicle//////////////////////
 
 	//relate to wheels
 	double rw[2];  //the radius of the wheel
@@ -26,6 +34,8 @@ private:
 	double mu;   //friction coefficient
 	double Iw[2]; //the inertia of the wheel
 	double fr[2];  //rolling resistance coefficient
+
+
 	double mass; //mass
 	double g;  //acc due to gravity
 	double rou;
@@ -35,16 +45,20 @@ private:
 	double lf;
 	double lr;
 	double Izz;
+
+
 	double Je;
 
 	//the fraction by which the engine torque is reduced
 	double Efactor;
 
-	int i_final;
-	int i_gear;
+	double i_final;
+	double i_gear;
 	double eta_tr;
 	double eta_fd;
-	int r_gear;
+	double r_gear;
+	double i_tm[10]; //gear ration for each gear
+	double velocity_bound[2][10];
 
 	//upper and lower bounds of acceleration limits,
 	double a_xupper;
@@ -54,18 +68,14 @@ private:
 	double T_bmax;
 	double kb;
 
-	//input:
+	/////////////////////////////input//////////////////////////////
 	double A_ped;   //pedal
 	double B_ped;  //brake
 	double steering_angle;
 
-	//the functions:
-	void diff_equation(void);
-	void integrator(void);
-	double max_dynamics(double a, double b);
-	double abs_dynamics(double a);
-	double f_omegae(double omega_e);
 
+
+	/////////////////////////states/////////////////////////////////////
 	//the velocity of the vehicle, expressed in the body frame of the vehicle
 	double v_body[3];
 	double omega_body[3];  //angular velocity, body frame
@@ -75,7 +85,6 @@ private:
 
 	//the angular velocity of the wheel
 	double omega_w[2];
-
 	//the derivative of angular velocity of the wheel
 	double omega_wheel_dot[2];
 
@@ -89,6 +98,12 @@ private:
 
 	//time step:
 	double T_samp;
+
+	int agear;
+	int agear_diff;
+
+private:
+
 };
 
 #endif /* DYNAMICS_VEHICLE_H_ */

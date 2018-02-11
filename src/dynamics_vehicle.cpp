@@ -12,8 +12,92 @@
 
 dynamics::dynamics(){
 
+	///////////////////the parameters of the vehicle//////////////////////
+
+	//relate to wheels
+	rw[0] = 0.347; rw[1] = 0.347;  //the radius of the wheel
+	cp = 20;  //parameter of cornering stiffness
+	mu = 0.9;   //friction coefficient
+	Iw[0] = 11; Iw[1] = 11; //the inertia of the wheel, FH16
+	fr[0] = 0.0164; fr[1] = 0.0164;  //rolling resistance coefficient, FH16
+
+	mass = 2194; //mass
+	g = 9.8;  //acc due to gravity
+	rou = 1.225;  C_d = 0.7;  A = 10;//coefficient of air drag, FH16
+
+	theta_g = 0; //slope
+	lf = 1.41;
+	lr = 1.576;
+	Izz = 894.402;
+
+	Je = 4;  //flywheel inertia, FH16
+
+	//the fraction by which the engine torque is reduced
+	Efactor = 0.5; ////fh16
+
+	i_final = 3.329;
 
 
+	i_tm[0] = 5.2; //gear ration for each gear
+	i_tm[1] = 3.029; //gear ration for each gear
+	i_tm[2] = 1.96; //gear ration for each gear
+	i_tm[3] = 1.469; //gear ration for each gear
+	i_tm[4] = 1.231; //gear ration for each gear
+	i_tm[5] = 1; //gear ration for each gear
+	i_tm[6] = 0.809; //gear ration for each gear
+	i_tm[6] = 0.673; //gear ration for each gear
+	//5.2,3.029,1.96,1.469,1.231,1,0.809,0.673
+	// velocity_bound[2][10];
+
+	i_gear = i_tm[0];
+	eta_tr = 1;  //efficient, FH16
+	eta_fd = 0.9; //efficient, FH16
+	r_gear = 0; //the flag of backward
+
+	//upper and lower bounds of acceleration limits,
+	a_xupper = 1.35; //fh16
+	a_xlower = 1.1;  //fh16
+
+	//relating to brake:
+	T_bmax = 0;
+	kb = 0;
+
+	/////////////////////////////input//////////////////////////////
+	A_ped = 0;   //pedal
+	B_ped = 0;  //brake
+	steering_angle = 0;
+
+
+
+	/////////////////////////states/////////////////////////////////////
+	//the velocity of the vehicle, expressed in the body frame of the vehicle
+	for (int i = 0; i < 3; i++){
+		v_body[i] = 0;
+		omega_body[i] = 0;  //angular velocity, body frame
+
+		vb_dot[i] = 0;  //dot of velocity of body
+		omegab_dot[i] = 0;  //dot of angular velocity of body
+	}
+
+	for (int i = 0; i < 2; i++){
+	//the angular velocity of the wheel
+	  omega_w[i] = 0;
+	//the derivative of angular velocity of the wheel
+	  omega_wheel_dot[i] = 0;
+	  T_prop[i] = 0;
+	  T_brk[i] = 0;
+	}
+
+
+	//braking torque:
+	T_b_general = 0;
+	T_b_dot_general = 0; //dot of T_b
+
+	//time step:
+	T_samp = 0.01;
+
+	agear = 1;
+	agear_diff = 0;
 }
 
 
@@ -102,6 +186,7 @@ void dynamics::diff_equation(){
 	omega_p_dot = omega_f_dot;
 
 	double omega_t, omega_t_dot;
+	i_gear = i_tm[agear-1];  //agear is from 1 t0 ...,
 	omega_t = omega_p * i_gear;
 	omega_t_dot = omega_p_dot*i_gear;
 
@@ -186,6 +271,14 @@ void dynamics::diff_equation(){
     //dot of T_b:
 	T_b_dot_general = kb*(T_req-T_b_general);
 
+
+	//agear
+	if (v_body[0] > velocity_bound[0][agear])  //upper bound
+		agear_diff = 1;
+	else if (v_body[0] < velocity_bound[1][agear])  //lower bound
+		agear_diff = -1;
+	else
+		agear_diff = 0;
 }
 
 
@@ -205,6 +298,9 @@ void dynamics::integrator(void){
 	for(int j = 0; j < 2; j++){
 		omega_w[j] = omega_wheel_dot[j]*T_samp;
 	}
+
+	//agear
+	agear = agear_diff + agear;
 
 }
 
