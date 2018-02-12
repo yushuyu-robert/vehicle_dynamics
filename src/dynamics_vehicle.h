@@ -16,16 +16,50 @@
 
 //from 22nd, Jan., 2017,  the dynamics of the vehicles
 
+
 class dynamics{
 public:
 	dynamics();
 
+	typedef struct
+	{
+		double v_body[3];
+		double omega_body[3];  //angular velocity, body frame
+		//the angular velocity of the wheel
+		double omega_w[2];
+		//braking torque:
+		double T_b_general;
+	} state_vehicle;
+
+	typedef struct
+		{
+		double vb_dot[3];  //dot of velocity of body
+			//the derivative of angular velocity of the wheel
+			double omegab_dot[3];  //dot of angular velocity of body
+			double omega_wheel_dot[2];
+			double T_b_dot_general; //dot of T_b
+		} diff_vehicle;
+
+		typedef struct
+				{
+			double A_ped;   //pedal
+			double B_ped;  //brake
+			double steering_angle;
+				} input_vehicle;
+
+
 	//the functions:
-	void diff_equation(void);
+	void diff_equation(state_vehicle &x, input_vehicle &u,  double t, diff_vehicle &out);
+	void te(int x);
 	void integrator(void);
 	double max_dynamics(double a, double b);
 	double abs_dynamics(double a);
 	double CalcEngineMaxTorque(double m_engineSpeed);
+
+
+	state_vehicle state_global;
+	diff_vehicle diff_global;
+	input_vehicle input_global;
 
 	///////////////////the parameters of the vehicle//////////////////////
 
@@ -70,6 +104,10 @@ public:
 	double T_bmax;
 	double kb;
 
+	//  omega_wheel_dot = (T_prop - T_brk - Fw[0] * rw - T_roll);
+	double T_prop[2];
+	double T_brk[2];
+
 	/////////////////////////////input//////////////////////////////
 	double A_ped;   //pedal
 	double B_ped;  //brake
@@ -77,29 +115,27 @@ public:
 
 
 
-	/////////////////////////states/////////////////////////////////////
-	//the velocity of the vehicle, expressed in the body frame of the vehicle
-	double v_body[3];
-	double omega_body[3];  //angular velocity, body frame
+//	/////////////////////////states/////////////////////////////////////
+//	//the velocity of the vehicle, expressed in the body frame of the vehicle
+//	double v_body[3];
+//	double omega_body[3];  //angular velocity, body frame
+//	//the angular velocity of the wheel
+//	double omega_w[2];
+//	//braking torque:
+//	double T_b_general;
+//
+//
+//	double vb_dot[3];  //dot of velocity of body
+//	//the derivative of angular velocity of the wheel
+//	double omegab_dot[3];  //dot of angular velocity of body
+//	double omega_wheel_dot[2];
+//	double T_b_dot_general; //dot of T_b
 
-	double vb_dot[3];  //dot of velocity of body
-	double omegab_dot[3];  //dot of angular velocity of body
 
-	//the angular velocity of the wheel
-	double omega_w[2];
-	//the derivative of angular velocity of the wheel
-	double omega_wheel_dot[2];
-
-	//  omega_wheel_dot = (T_prop - T_brk - Fw[0] * rw - T_roll);
-	double T_prop[2];
-	double T_brk[2];
-
-	//braking torque:
-	double T_b_general;
-	double T_b_dot_general; //dot of T_b
-
+////others:
 	//time step:
 	double T_samp;
+	double T_global;
 
 	int agear;
 	int agear_diff;

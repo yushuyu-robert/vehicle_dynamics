@@ -48,31 +48,19 @@ int main(int argc, char **argv)
 
 void timerCallback(const ros::TimerEvent& event){
 
-
-	thisdynamics.diff_equation();
 	thisdynamics.integrator();
 
 	geometry_msgs::Twist msg;
 
-	msg.linear.x = thisdynamics.v_body[0];
-	msg.linear.y = thisdynamics.v_body[1];
-	msg.angular.z = thisdynamics.omega_body[2];
+	msg.linear.x = thisdynamics.state_global.v_body[0];
+	msg.linear.y = thisdynamics.state_global.v_body[1];
+	msg.angular.z = thisdynamics.state_global.omega_body[2];
 
 	msg.angular.x = msg.angular.x+test;
 
 	vel_pub.publish(msg);
 	//ROS_INFO_STREAM("T_sampling: ");
 	test++;// test
-
-
-
-
-
-
-
-
-
-
 
 
 	{  //test:
@@ -95,7 +83,7 @@ void timerCallback(const ros::TimerEvent& event){
 		    		thisdynamics.abs_dynamics(rw *omega_w ), 0.01);
 		    double sxy = thisdynamics.abs_dynamics(sx);
 		    double f_sxy  = 2/pi*atan(2*cp*sxy/pi);
-		    double Fz = mass*g*cos(theta_g)/2;
+		    double Fz = mass*g*cos(theta_g);
 
 		    double Fxy = mu*Fz *f_sxy;
 		    double Fw = Fxy*sx/thisdynamics.max_dynamics(sxy,0.1);
@@ -114,20 +102,13 @@ void timerCallback(const ros::TimerEvent& event){
 		    std::cerr << std::endl;
 	}
 
-
-
-
-
-
-
-
 }
 
 
 void inputCallback(const vehicle_dynamics::vehicle_inputConstPtr& input){
-	thisdynamics.steering_angle = (double)input->steering;
-	thisdynamics.A_ped = (double)input->pedal;
-	thisdynamics.B_ped = (double)input->brake;
+	thisdynamics.input_global.steering_angle = (double)input->steering;
+	thisdynamics.input_global.A_ped = (double)input->pedal;
+	thisdynamics.input_global.B_ped = (double)input->brake;
 }
 
 

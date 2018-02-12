@@ -59,49 +59,88 @@ dynamics::dynamics(){
 	T_bmax = 0;
 	kb = 0;
 
+	T_prop[0] = 0;  T_prop[1] = 0;
+	T_brk[0] = 0;   T_brk[1] = 0;
+
 	/////////////////////////////input//////////////////////////////
-	A_ped = 0;   //pedal
-	B_ped = 0;  //brake
-	steering_angle = 0;
-
-
+	input_global.A_ped = 0;   //pedal
+	input_global.B_ped = 0;  //brake
+	input_global.steering_angle = 0;
 
 	/////////////////////////states/////////////////////////////////////
 	//the velocity of the vehicle, expressed in the body frame of the vehicle
 	for (int i = 0; i < 3; i++){
-		v_body[i] = 0;
-		omega_body[i] = 0;  //angular velocity, body frame
+		state_global.v_body[i] = 0;
+		state_global.omega_body[i] = 0;  //angular velocity, body frame
 
-		vb_dot[i] = 0;  //dot of velocity of body
-		omegab_dot[i] = 0;  //dot of angular velocity of body
+		diff_global.vb_dot[i] = 0;  //dot of velocity of body
+		diff_global.omegab_dot[i] = 0;  //dot of angular velocity of body
 	}
 
 	for (int i = 0; i < 2; i++){
 	//the angular velocity of the wheel
-	  omega_w[i] = 0;
+		state_global.omega_w[i] = 0;
 	//the derivative of angular velocity of the wheel
-	  omega_wheel_dot[i] = 0;
-	  T_prop[i] = 0;
-	  T_brk[i] = 0;
+		diff_global.omega_wheel_dot[i] = 0;
+
 	}
-
-
 	//braking torque:
-	T_b_general = 0;
-	T_b_dot_general = 0; //dot of T_b
+	state_global.T_b_general = 0;
+	diff_global.T_b_dot_general = 0; //dot of T_b
+
+
 
 	//time step:
 	T_samp = 1;
+	T_global = 0;
 
 	agear = 1;
 	agear_diff = 0;
 }
 
+void dynamics::te(int x){
 
-void dynamics::diff_equation(){
+}
+
+
+void dynamics::diff_equation(state_vehicle &state, input_vehicle &input,  double t_sim, diff_vehicle &out){
 	//the differential equation of all the dynamics
 
 	int i = 0;
+	//input:
+
+	double A_ped = input.A_ped;   //pedal
+	double B_ped = input.B_ped;  //brake
+	double steering_angle = input.steering_angle;
+
+	/////////////////////////states/////////////////////////////////////
+	//the velocity of the vehicle, expressed in the body frame of the vehicle
+	double v_body[3];
+	double omega_body[3];  //angular velocity, body frame
+	//the angular velocity of the wheel
+	double omega_w[2];
+	//braking torque:
+	double T_b_general;
+
+
+//	double vb_dot[3];  //dot of velocity of body
+//	//the derivative of angular velocity of the wheel
+//	double omegab_dot[3];  //dot of angular velocity of body
+//	double omega_wheel_dot[2];
+//	double T_b_dot_general; //dot of T_b
+
+	//state:
+	for (i = 0; i < 3; i++){
+		v_body[i] = state.v_body[i];
+		omega_body[i] = state.omega_body[i];  //angular velocity, body frame
+	}
+	for (i = 0; i < 2; i++){
+			//the angular velocity of the wheel
+		omega_w[i] = state.omega_w[i];
+	}
+			//braking torque:
+		T_b_general = state.T_b_general;
+
 
 	//wheel
 	double f_sxy[2];  //3.14, middle variable
@@ -120,11 +159,9 @@ void dynamics::diff_equation(){
 	double delta[2];  //the steering angle
 	delta[0] = steering_angle;
 	delta[1] = 0;
-	for (i=0; i<1; i++){
+	for (i=0; i<2; i++){
 		vb_wheel[0][i] = v_body[0]*cos(delta[i]) + v_body[1] * sin(delta[i]);
 		vb_wheel[1][i] = -v_body[0]*sin(delta[i]) + v_body[1] * cos(delta[i]);
-
-
 
 		sx[i] = -(vb_wheel[0][i] - rw[i] * omega_w[i] ) / max_dynamics(abs_dynamics(rw[i]*omega_w[i]), 0.01);
 		sy[i] = -(vb_wheel[1][i] ) / max_dynamics(abs_dynamics(rw[i]*omega_w[i]), 0.01);
@@ -162,11 +199,19 @@ void dynamics::diff_equation(){
 	double Fy;
 
 	//x direction, body frame
-	F_d[0] = 0.5*rou*C_d*A*v_body[0]*v_body[0];
-	F_g[0] = mass*g*sin(theta_g);
+
+	if(v_body[0]>0.01){
+		F_d[0] = 0.5*rou*C_d*A*v_body[0]*v_body[0];
+		F_g[0] = mass*g*sin(theta_g);
+	}
+	else if(v_body[0] < -0.01){
+		F_d[0] = -0.5*rou*C_d*A*v_body[0]*v_body[0];
+		F_g[0] = -mass*g*sin(theta_g);
+	}
+
 	Fx = Fv[0][0] + Fv[0][1] - F_d[0] -F_g[0];
 
-	Fx = Fv[0][0]; //test
+	Fx = Fv[0][0] + Fv[0][1]; //test
 
 
 
@@ -184,7 +229,7 @@ void dynamics::diff_equation(){
 	//power strain, XC90:
 	double omega_d, omega_d_dot;
 	omega_d =  (omega_w[0] + omega_w[1])/2;
-	omega_d_dot = (omega_wheel_dot[0] + omega_wheel_dot[1])/2;
+	//omega_d_dot = (omega_wheel_dot[0] + omega_wheel_dot[1])/2;
 
 	double omega_f, omega_f_dot;
 	omega_f = omega_d*i_final;
@@ -219,12 +264,12 @@ void dynamics::diff_equation(){
 
 	double Te;
 
-	if(vb_dot[0] > a_xupper)
-		Te = Efactor*Teaped;
-	else if (vb_dot[0] < a_xlower)
-		Te = T_emax;
-	else
-		Te = Teaped*((vb_dot[0]-a_xlower)*(Efactor-1)/(a_xupper - a_xlower)+1);
+//	if(vb_dot[0] > a_xupper)
+//		Te = Efactor*Teaped;
+//	else if (vb_dot[0] < a_xlower)
+//		Te = T_emax;
+//	else
+//		Te = Teaped*((vb_dot[0]-a_xlower)*(Efactor-1)/(a_xupper - a_xlower)+1);
 
 	//omega_e_dot = (Te-Tc)/Je;
 	double Tc;
@@ -287,19 +332,18 @@ void dynamics::diff_equation(){
 
 		forceinducedtorque = Fw[0][i] * rw[i];
 
-		omega_wheel_dot[i]= (T_prop[i] - T_brk[i] - forceinducedtorque - T_roll[i])/Iw[i];
+		out.omega_wheel_dot[i]= (T_prop[i] - T_brk[i] - forceinducedtorque - T_roll[i])/Iw[i];
 	}
 
 
 	//derivative of body rotational velocity
-	omegab_dot[2] = (lf*Fv[1][0] - lr* Fv[1][1])/Izz;
+	out.omegab_dot[2] = (lf*Fv[1][0] - lr* Fv[1][1])/Izz;
 
 	//derivative of body velocity, expressed in body frame:
-	vb_dot[0] = ax + v_body[1]*omega_body[2];
-	vb_dot[1] = ay - v_body[0]*omega_body[2];
-
+	out.vb_dot[0] = ax + v_body[1]*omega_body[2];
+	out.vb_dot[1] = ay - v_body[0]*omega_body[2];
     //dot of T_b:
-	T_b_dot_general = kb*(T_req-T_b_general);
+	out.T_b_dot_general = kb*(T_req-T_b_general);
 
 
 	//agear
@@ -309,6 +353,7 @@ void dynamics::diff_equation(){
 		agear_diff = -1;
 	else
 		agear_diff = 0;
+
 
 
 
@@ -333,8 +378,8 @@ void dynamics::diff_equation(){
 //    double Ftest = mu*Fzz *f_sxy[0];
 //    Fw[0][0] = Ftest*sx[0]/max_dynamics(sxy[0],0.1);
 //
-//    vb_dot[0] = Fw[0][0]/mass;
-//    omega_wheel_dot[0] = (50-Fw[0][0]*rw[0] )/i_wheel;
+//    out.vb_dot[0] = Fw[0][0]/mass;
+//    out.omega_wheel_dot[0] = (50-Fw[0][0]*rw[0] )/i_wheel;
 
     /////////////////test finish/////////////////
 
@@ -350,10 +395,10 @@ void dynamics::diff_equation(){
 //<< "	omega_body[2]: " << omega_body[2] << std::endl;
 
 
-//	std::cerr << "omega_wheel_dot[0]: " << omega_wheel_dot[0] <<
-//			"  omega_wheel_dot[1]: " << omega_wheel_dot[1] << std::endl;
-//	std::cerr << "vb_dot[0]: " << vb_dot[0] <<
-//			"  vb_dot[1]: " << vb_dot[1] << std::endl;
+	std::cerr << "omega_wheel_dot[0]: " << out.omega_wheel_dot[0] <<
+			"  omega_wheel_dot[1]: " << out.omega_wheel_dot[1] << std::endl;
+	std::cerr << "vb_dot[0]: " << out.vb_dot[0] <<
+			"  vb_dot[1]: " << out.vb_dot[1] << std::endl;
 //	std::cerr << "omegab_dot[2]: " << omegab_dot[2] << std::endl;
 ////
 //
@@ -388,29 +433,100 @@ void dynamics::diff_equation(){
 
 void dynamics::integrator(void){
 
-	T_b_general = T_b_general + T_samp*T_b_dot_general;
+	//update stete:
+	int flag = 0;
+	switch (flag)
+	{
+		{
+			//4-order:
+		case 0:
+			state_vehicle x1, x2, x3, x4;
+			diff_vehicle k1, k2, k3, k4;
+
+			diff_equation(state_global, input_global,  T_global, k1);
+
+			x2.T_b_general = state_global.T_b_general+ 0.5*T_samp*k1.T_b_dot_general;
+			for(int i = 0; i < 3; i++){
+				x2.v_body[i] = state_global.v_body[i] + 0.5*k1.vb_dot[i]*T_samp;
+				x2.omega_body[i] = state_global.omega_body[i] + 0.5*k1.omegab_dot[i]*T_samp;
+			}
+			for(int j = 0; j < 2; j++){
+				x2.omega_w[j] = 0.5*k1.omega_wheel_dot[j]*T_samp + state_global.omega_w[j];
+			}
+			diff_equation(x2, input_global,  T_global+0.5*T_samp, k2);
+
+			x3.T_b_general = state_global.T_b_general+ 0.5*T_samp*k2.T_b_dot_general;
+			for(int i = 0; i < 3; i++){
+				x3.v_body[i] = state_global.v_body[i] + 0.5*k2.vb_dot[i]*T_samp;
+				x3.omega_body[i] = state_global.omega_body[i] + 0.5*k2.omegab_dot[i]*T_samp;
+			}
+			for(int j = 0; j < 2; j++){
+				x3.omega_w[j] = 0.5*k2.omega_wheel_dot[j]*T_samp + state_global.omega_w[j];
+			}
+			diff_equation(x3, input_global,  T_global + 0.5*T_samp, k3);
+
+			x4.T_b_general = state_global.T_b_general+ T_samp*k3.T_b_dot_general;
+			for(int i = 0; i < 3; i++){
+				x4.v_body[i] = state_global.v_body[i] + k3.vb_dot[i]*T_samp;
+				x4.omega_body[i] = state_global.omega_body[i] + k3.omegab_dot[i]*T_samp;
+			}
+			for(int j = 0; j < 2; j++){
+				x4.omega_w[j] = k3.omega_wheel_dot[j]*T_samp + state_global.omega_w[j];
+			}
+			diff_equation(x4, input_global,  T_global + T_samp, k4);
 
 
-	//body:
-	for(int i = 0; i < 3; i++){
-		v_body[i] = v_body[i] + vb_dot[i]*T_samp;
-		omega_body[i] = omega_body[i] + omegab_dot[i]*T_samp;
+			state_global.T_b_general = state_global.T_b_general+ T_samp*(k1.T_b_dot_general +
+			2*k2.T_b_dot_general + 2*k3.T_b_dot_general+ k4.T_b_dot_general)/6;
+			for(int i = 0; i < 3; i++){
+				state_global.v_body[i] = state_global.v_body[i] + T_samp*(
+						k1.vb_dot[i] + 2*k2.vb_dot[i] + 2*k3.vb_dot[i] + k4.vb_dot[i])/6;
+				state_global.omega_body[i] = state_global.omega_body[i] + (
+						k1.omegab_dot[i] + 2* k2.omegab_dot[i] + 2*k3.omegab_dot[i] + k4.omegab_dot[i])*T_samp/6;
+			}
+			for(int j = 0; j < 2; j++){
+				state_global.omega_w[j] = state_global.omega_w[j] +  (
+						k1.omega_wheel_dot[j] + 2*k2.omega_wheel_dot[j] + 2* k3.omega_wheel_dot[j] + k4.omega_wheel_dot[j])*T_samp/6;
+			}
+
+			T_global = T_global+T_samp;
+
+			break;
+		}
+
+
+
+
+		{ //1-order:
+		case 1:
+
+			diff_vehicle k_1st;
+			diff_equation(state_global, input_global,  T_global, k_1st);
+			state_global.T_b_general = state_global.T_b_general + T_samp*k_1st.T_b_dot_general;
+			//body:
+			for(int i = 0; i < 3; i++){
+				state_global.v_body[i] = state_global.v_body[i] + k_1st.vb_dot[i]*T_samp;
+				state_global.omega_body[i] = state_global.omega_body[i] + k_1st.omegab_dot[i]*T_samp;
+			}
+			//wheel:
+			for(int j = 0; j < 2; j++){
+				state_global.omega_w[j] = k_1st.omega_wheel_dot[j]*T_samp + state_global.omega_w[j];
+			}
+			T_global = T_global+T_samp;
+			break;
+		}
+
 	}
-
-
-	//wheel:
-	for(int j = 0; j < 2; j++){
-		omega_w[j] = omega_wheel_dot[j]*T_samp + omega_w[j];
-	}
-
 	//agear
 	agear = agear_diff + agear;
 
-	std::cerr << "angular velocity of wheel: " << omega_w[0]  << "," <<  omega_w[1] << std::endl;
-	std::cerr << "angular acc of wheel:  " << omega_wheel_dot[0] << ","  << omega_wheel_dot[1] << std::endl;
+	std::cerr << "angular velocity of wheel: " << state_global.omega_w[0]  << "," <<  state_global.omega_w[1] << std::endl;
+//	std::cerr << "angular acc of wheel:  " << diff_global.omega_wheel_dot[0] << ","  << diff_global.omega_wheel_dot[1] << std::endl;
 
-	std::cerr << "body velocity (x, y, rot z): " << v_body[0] << "," << v_body[1] << "," << omega_body[2] << std::endl;
-	std::cerr << "body acc (x, y, rot z): " << vb_dot[0]  << "," << vb_dot[1]  << "," << omegab_dot[2] << std::endl;
+	std::cerr << "body velocity (x, y, rot z): " << state_global.v_body[0] << ","
+			<< state_global.v_body[1] << "," << state_global.omega_body[2] << std::endl;
+//	std::cerr << "body acc (x, y, rot z): " << diff_global.vb_dot[0]  << ","
+//			<< diff_global.vb_dot[1]  << "," << diff_global.omegab_dot[2] << std::endl;
 
 }
 
