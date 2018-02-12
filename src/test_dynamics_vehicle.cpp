@@ -14,6 +14,7 @@ void inputCallback(const vehicle_dynamics::vehicle_inputConstPtr& input);
 int test;
 
 ros::Publisher vel_pub;
+ros::Subscriber sub;
 
 //vehicle dynamics
 dynamics thisdynamics;
@@ -25,12 +26,12 @@ int main(int argc, char **argv)
 
 	//timer:
 	ros::Timer timer_pubstate;
-	double timer = 0.01;
+	double timer = 0.001;
 	timer_pubstate = n.createTimer(ros::Duration(timer), timerCallback);  //timer used to publish state, should be at least for some minimal frequency
 
-	thisdynamics.T_samp = timer;
+	//thisdynamics.T_samp = timer;
 	//subscribe input
-	ros::Subscriber sub = n.subscribe("input", 1, inputCallback);
+	sub = n.subscribe("input", 1, inputCallback);
 
 	vel_pub = n.advertise<geometry_msgs::Twist>("velocity", 1);
 
@@ -41,9 +42,14 @@ int main(int argc, char **argv)
 void timerCallback(const ros::TimerEvent& event){
 
 
+	thisdynamics.diff_equation();
 	thisdynamics.integrator();
 
 	geometry_msgs::Twist msg;
+
+	msg.linear.x = thisdynamics.v_body[0];
+	msg.linear.y = thisdynamics.v_body[1];
+	msg.angular.z = thisdynamics.omega_body[2];
 
 	msg.angular.x = msg.angular.x+test;
 

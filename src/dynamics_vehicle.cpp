@@ -91,7 +91,7 @@ dynamics::dynamics(){
 	T_b_dot_general = 0; //dot of T_b
 
 	//time step:
-	T_samp = 0.01;
+	T_samp = 0.001;
 
 	agear = 1;
 	agear_diff = 0;
@@ -112,6 +112,10 @@ void dynamics::diff_equation(){
 	double T_roll[2];
 	//the velocity of the vehicle, expressed in the wheel frame
 	double vb_wheel[3][2];
+	//slip
+	double sx[2];
+	double sy[2];
+	double sxy[2];
 
 	double delta[2];  //the steering angle
 	delta[0] = steering_angle;
@@ -120,25 +124,29 @@ void dynamics::diff_equation(){
 		vb_wheel[0][i] = v_body[0]*cos(delta[i]) + v_body[1] * sin(delta[i]);
 		vb_wheel[1][i] = -v_body[0]*sin(delta[i]) + v_body[1] * cos(delta[i]);
 
-		//slip
-		double sx[2];
-		double sy[2];
-		double sxy[2];
 
-		sx[i] = (vb_wheel[0][i] - rw[i] * omega_w[i] ) / max_dynamics(abs_dynamics(rw[i]*omega_w[i]), 0.01);
-		sy[i] = (vb_wheel[1][i] ) / max_dynamics(abs_dynamics(rw[i]*omega_w[i]), 0.01);
+
+		sx[i] = -(vb_wheel[0][i] - rw[i] * omega_w[i] ) / max_dynamics(abs_dynamics(rw[i]*omega_w[i]), 0.01);
+		sy[i] = -(vb_wheel[1][i] ) / max_dynamics(abs_dynamics(rw[i]*omega_w[i]), 0.01);
 		sxy[i] = sqrt(sx[i]*sx[i] + sy[i]*sy[i]);
 
-
-
 		f_sxy[i] = 2/PI*atan(2*cp*sxy[i]/PI);
-		Fz[i] = mass*g*cos(theta_g);
+		Fz[i] = mass*g*cos(theta_g)/2;
 		Fxy[i] = mu*Fz[i]*f_sxy[i];
-		Fw[0][i] =(rw[i]*omega_w[i] - vb_wheel[0][i])*Fxy[i] / sqrt((rw[i]*omega_w[i] - vb_wheel[0][i])*(rw[i]*omega_w[i]
-		             - vb_wheel[0][i]) + vb_wheel[1][i] * vb_wheel[1][i]);
-		Fw[1][i] = - vb_wheel[1][i]*Fxy[i] / sqrt((rw[i]*omega_w[i] - vb_wheel[0][i])*(rw[i]*omega_w[i] - vb_wheel[0][i]) + vb_wheel[1][i] * vb_wheel[1][i]);
+//		Fw[0][i] =(rw[i]*omega_w[i] - vb_wheel[0][i])*Fxy[i] / sqrt((rw[i]*omega_w[i] - vb_wheel[0][i])*(rw[i]*omega_w[i]
+//		             - vb_wheel[0][i]) + vb_wheel[1][i] * vb_wheel[1][i]);
+//		Fw[1][i] = - vb_wheel[1][i]*Fxy[i] / sqrt((rw[i]*omega_w[i] - vb_wheel[0][i])*(rw[i]*omega_w[i] - vb_wheel[0][i]) + vb_wheel[1][i] * vb_wheel[1][i]);
 
-		T_roll[i] = fr[i]*mass*g*rw[i];
+		Fw[0][i] = Fxy[i]*sx[i]/max_dynamics(sxy[i],0.1);
+		Fw[1][i] = Fxy[i]*sy[i]/max_dynamics(sxy[i],0.1);
+
+		if (omega_w[i]>0.0){
+			T_roll[i] = fr[i]*mass*g*rw[i];
+		}
+		else{
+			T_roll[i] = 0;
+		}
+
 
 		//force actuated on body, body frame
 		Fv[0][i] = cos(delta[i]) * Fw[0][i] - sin(delta[i])*Fw[1][i];
@@ -156,6 +164,10 @@ void dynamics::diff_equation(){
 	F_d[0] = 0.5*rou*C_d*A*v_body[0]*v_body[0];
 	F_g[0] = mass*g*sin(theta_g);
 	Fx = Fv[0][0] + Fv[0][1] - F_d[0] -F_g[0];
+
+	Fx = Fv[0][0] + Fv[0][1];
+
+	//Fx = 0;//test
 
 	//y direction, body frame
 //	F_d[1] = 0.5*rou*C_d*A*v_body[1]*v_body[1];
@@ -197,7 +209,7 @@ void dynamics::diff_equation(){
 
 
 	double T_emax;
-	T_emax = f_omegae(omega_e);  //3.30
+	T_emax = CalcEngineMaxTorque(omega_e);  //3.30
 
 
 	double Teaped;
@@ -216,6 +228,9 @@ void dynamics::diff_equation(){
 	//omega_e_dot = (Te-Tc)/Je;
 	double Tc;
 	Tc = Te - Je*omega_e_dot;
+
+	Te = 1;
+	Tc = Te; //test
 
 	double Tt = Tc;
 
@@ -242,19 +257,35 @@ void dynamics::diff_equation(){
 		T_prop[1] = max_dynamics(Twr, 0);
 	}
 
+	T_prop[0] = 100; //test
+	T_prop[1] = 100;  //test
+
 
 	//brake for XC90:
 	double T_req = T_bmax*0.01*B_ped;
 
+	//test:
 	T_brk[0] = T_b_general/2;
 	T_brk[1] = T_b_general/2;
+
 
 
 	//derivative part:
 
 	//derivative of wheel rotational velocity
 	for (i=0; i<2; i++){
-		omega_wheel_dot[i]= (T_prop[i] - T_brk[i] - Fw[0][i] * rw[i] - T_roll[i])/Iw[i];
+		//T_roll[i] = 0; //test
+
+		double forceinducedtorque;
+		if (omega_w[i]>0.1){
+			forceinducedtorque = Fw[0][i] * rw[i];
+		}
+		else{
+			forceinducedtorque = 0;
+		}
+
+
+		omega_wheel_dot[i]= (T_prop[i] - T_brk[i] - forceinducedtorque - T_roll[i])/Iw[i];
 	}
 
 
@@ -276,6 +307,41 @@ void dynamics::diff_equation(){
 		agear_diff = -1;
 	else
 		agear_diff = 0;
+
+	//ROS_INFO_STREAM("received path commands, flag_pc_cmd is set to)"<<vb_dot[0]));
+	std::cerr << "vb_dot[0]: " << vb_dot[0] << std::endl;
+	std::cerr << "vb_dot[1]: " << vb_dot[1] << std::endl;
+	std::cerr << "omegab_dot[2]: " << omegab_dot[2] << std::endl;
+	std::cerr << "omega_wheel_dot[0]: " << omega_wheel_dot[0] << std::endl;
+	std::cerr << "omega_wheel_dot[1]: " << omega_wheel_dot[1] << std::endl;
+
+	std::cerr << "v_body[0]: " << v_body[0] << std::endl;
+		std::cerr << "v_body[1]: " << v_body[1] << std::endl;
+		std::cerr << "omega_body[2]: " << omega_body[2] << std::endl;
+		std::cerr << "omega_w[0]: " << omega_w[0] << std::endl;
+		std::cerr << "omega_w[1]: " << omega_w[1] << std::endl;
+
+
+	std::cerr << "Fw[0][0]: " << Fw[0][0] << std::endl;
+	std::cerr << "Fw[1][0]: " << Fw[1][0] << std::endl;
+	std::cerr << "Fw[0][1]: " << Fw[0][1] << std::endl;
+	std::cerr << "Fw[1][1]: " << Fw[1][1] << std::endl;
+
+	std::cerr << "sx[0]:" << sx[0] << std::endl;
+	std::cerr << "sx[1]:" << sx[1] << std::endl;
+	std::cerr << "sy[0]:" << sy[0] << std::endl;
+	std::cerr << "sy[1]:" << sy[1] << std::endl;
+
+	std::cerr << "T_emax:" << T_emax << std::endl;
+	std::cerr << "T_prop[0]: " << T_prop[0] << std::endl;
+	std::cerr << "T_prop[1]: " << T_prop[1] << std::endl;
+	std::cerr << "T_brk[0]: " << T_brk[0] << std::endl;
+	std::cerr << "T_brk[1]: " << T_brk[1] << std::endl;
+	std::cerr << "T_roll[0]: " << T_roll[0] << std::endl;
+	std::cerr << "T_roll[1]: " << T_roll[1] << std::endl;
+
+	std::cerr << "i_gear: " << i_gear << std::endl;
+	std::cerr << "agear_diff: " << agear_diff << std::endl;
 }
 
 
@@ -320,13 +386,7 @@ double dynamics::abs_dynamics(double a){
 
 }
 
-double dynamics::f_omegae(double omega_e){
-
-	return omega_e;
-}
-
-
-double dynamics::CalcEngineMaxTorque() const {
+double dynamics::CalcEngineMaxTorque(double m_engineSpeed) {
 
 //	std::vector<std::pair<double, double> >  const torqueLookupTable;
 //	= {
@@ -370,8 +430,6 @@ double dynamics::CalcEngineMaxTorque() const {
 			  {219.911, 0.0}
 	};
 
-	double m_engineSpeed;
-
 	if (m_engineSpeed < torqueLookupTable[0][0]) {
 	return 0.0;
 	}
@@ -381,18 +439,19 @@ double dynamics::CalcEngineMaxTorque() const {
 	}
 
 	for (uint32_t i = 0; i < size - 2; i++) {
-	double const x1 = torqueLookupTable[i][0];
-	double const x2 = torqueLookupTable[i+1][0];
+		double const x1 = torqueLookupTable[i][0];
+		double const x2 = torqueLookupTable[i+1][0];
 
-	if (m_engineSpeed >= x1 && m_engineSpeed < x2) {
-	  double const r = (m_engineSpeed - x1) / (x2 - x1);
+		if (m_engineSpeed >= x1 && m_engineSpeed < x2) {
+//		  double const r = (m_engineSpeed - x1) / (x2 - x1);
+//
+//		  double const y1 = torqueLookupTable[i][1];
+		  double const y2 = torqueLookupTable[i+1][1];
+//
+//		  double const maxTorque = y1 + r * (y2 - y1);
 
-	  double const y1 = torqueLookupTable[i][1];
-	  double const y2 = torqueLookupTable[i+1][1];
-
-	  double const maxTorque = y1 + r * (y2 - y1);
-	  return maxTorque;
-	}
+		  return y2;
+		}
 	}
 
 	std::cerr << "Lookup failed. This should never happen." << std::endl;
