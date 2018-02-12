@@ -91,7 +91,7 @@ dynamics::dynamics(){
 	T_b_dot_general = 0; //dot of T_b
 
 	//time step:
-	T_samp = 0.001;
+	T_samp = 0.01;
 
 	agear = 1;
 	agear_diff = 0;
@@ -120,7 +120,7 @@ void dynamics::diff_equation(){
 	double delta[2];  //the steering angle
 	delta[0] = steering_angle;
 	delta[1] = 0;
-	for (i=0; i<2; i++){
+	for (i=0; i<1; i++){
 		vb_wheel[0][i] = v_body[0]*cos(delta[i]) + v_body[1] * sin(delta[i]);
 		vb_wheel[1][i] = -v_body[0]*sin(delta[i]) + v_body[1] * cos(delta[i]);
 
@@ -147,6 +147,7 @@ void dynamics::diff_equation(){
 			T_roll[i] = 0;
 		}
 
+		T_roll[i] = 0;
 
 		//force actuated on body, body frame
 		Fv[0][i] = cos(delta[i]) * Fw[0][i] - sin(delta[i])*Fw[1][i];
@@ -165,7 +166,7 @@ void dynamics::diff_equation(){
 	F_g[0] = mass*g*sin(theta_g);
 	Fx = Fv[0][0] + Fv[0][1] - F_d[0] -F_g[0];
 
-	Fx = Fv[0][0] + Fv[0][1];
+	Fx = Fv[0][0]; //test
 
 	//Fx = 0;//test
 
@@ -284,6 +285,7 @@ void dynamics::diff_equation(){
 			forceinducedtorque = 0;
 		}
 
+		forceinducedtorque = Fw[0][i] * rw[i];
 
 		omega_wheel_dot[i]= (T_prop[i] - T_brk[i] - forceinducedtorque - T_roll[i])/Iw[i];
 	}
@@ -307,6 +309,38 @@ void dynamics::diff_equation(){
 		agear_diff = -1;
 	else
 		agear_diff = 0;
+
+
+
+
+
+	////////test only, Feb. 12///
+    //parameters:
+    rw[0] = 0.347;
+    cp = 20;
+    mass = 2194;
+    g = 9.8;
+    theta_g=0;
+    mu=0.9;
+    double i_wheel = 11;
+    fr[0]= 0.0164;
+
+
+    sx[0] = -(v_body[0] - rw[0]  * omega_w[0] ) / max_dynamics(abs_dynamics(rw[0] *omega_w[0] ), 0.01);
+    sxy[0] = abs_dynamics(sx[0]);
+    f_sxy[0] = 2/PI*atan(2*cp*sxy[0]/PI);
+    double Fzz = mass*g*cos(theta_g)/2;
+    double Ftest = mu*Fzz *f_sxy[0];
+    Fw[0][0] = Ftest*sx[0]/max_dynamics(sxy[0],0.1);
+
+    vb_dot[0] = Fw[0][0]/mass;
+    omega_wheel_dot[0] = (100-Fw[0][0]*rw[0] )/i_wheel;
+
+    omega_wheel_dot[0] = (100-Fw[0][0]*rw[0] )/i_wheel;
+
+    /////////////////test
+
+
 
 	//ROS_INFO_STREAM("received path commands, flag_pc_cmd is set to)"<<vb_dot[0]));
 	std::cerr << "vb_dot[0]: " << vb_dot[0] << std::endl;
@@ -338,10 +372,16 @@ void dynamics::diff_equation(){
 	std::cerr << "T_brk[0]: " << T_brk[0] << std::endl;
 	std::cerr << "T_brk[1]: " << T_brk[1] << std::endl;
 	std::cerr << "T_roll[0]: " << T_roll[0] << std::endl;
+
+
 	std::cerr << "T_roll[1]: " << T_roll[1] << std::endl;
 
 	std::cerr << "i_gear: " << i_gear << std::endl;
 	std::cerr << "agear_diff: " << agear_diff << std::endl;
+
+
+
+
 }
 
 
