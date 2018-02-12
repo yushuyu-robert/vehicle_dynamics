@@ -3,7 +3,6 @@
 
 
 
-#define PI 3.14159265
 
 
 
@@ -11,6 +10,7 @@ dynamics::dynamics(){
 
 	///////////////////the parameters of the vehicle//////////////////////
 
+	PI = 3.14159265;
 	//relate to wheels
 	rw[0] = 0.347; rw[1] = 0.347;  //the radius of the wheel
 	cp = 20;  //parameter of cornering stiffness
@@ -91,7 +91,7 @@ dynamics::dynamics(){
 	T_b_dot_general = 0; //dot of T_b
 
 	//time step:
-	T_samp = 0.01;
+	T_samp = 1;
 
 	agear = 1;
 	agear_diff = 0;
@@ -168,7 +168,7 @@ void dynamics::diff_equation(){
 
 	Fx = Fv[0][0]; //test
 
-	//Fx = 0;//test
+
 
 	//y direction, body frame
 //	F_d[1] = 0.5*rou*C_d*A*v_body[1]*v_body[1];
@@ -258,8 +258,8 @@ void dynamics::diff_equation(){
 		T_prop[1] = max_dynamics(Twr, 0);
 	}
 
-	T_prop[0] = 100; //test
-	T_prop[1] = 100;  //test
+	T_prop[0] = 50; //test
+	T_prop[1] = 50;  //test
 
 
 	//brake for XC90:
@@ -315,69 +315,69 @@ void dynamics::diff_equation(){
 
 
 	////////test only, Feb. 12///
-    //parameters:
-    rw[0] = 0.347;
-    cp = 20;
-    mass = 2194;
-    g = 9.8;
-    theta_g=0;
-    mu=0.9;
-    double i_wheel = 11;
-    fr[0]= 0.0164;
+//    //parameters:
+//    rw[0] = 0.347;
+//    cp = 20;
+//    mass = 2194;
+//    g = 9.8;
+//    theta_g=0;
+//    mu=0.9;
+//    double i_wheel = 11;
+//    fr[0]= 0.0164;
+//
+//
+//    sx[0] = -(v_body[0] - rw[0]  * omega_w[0] ) / max_dynamics(abs_dynamics(rw[0] *omega_w[0] ), 0.01);
+//    sxy[0] = abs_dynamics(sx[0]);
+//    f_sxy[0] = 2/PI*atan(2*cp*sxy[0]/PI);
+//    double Fzz = mass*g*cos(theta_g)/2;
+//    double Ftest = mu*Fzz *f_sxy[0];
+//    Fw[0][0] = Ftest*sx[0]/max_dynamics(sxy[0],0.1);
+//
+//    vb_dot[0] = Fw[0][0]/mass;
+//    omega_wheel_dot[0] = (50-Fw[0][0]*rw[0] )/i_wheel;
 
-
-    sx[0] = -(v_body[0] - rw[0]  * omega_w[0] ) / max_dynamics(abs_dynamics(rw[0] *omega_w[0] ), 0.01);
-    sxy[0] = abs_dynamics(sx[0]);
-    f_sxy[0] = 2/PI*atan(2*cp*sxy[0]/PI);
-    double Fzz = mass*g*cos(theta_g)/2;
-    double Ftest = mu*Fzz *f_sxy[0];
-    Fw[0][0] = Ftest*sx[0]/max_dynamics(sxy[0],0.1);
-
-    vb_dot[0] = Fw[0][0]/mass;
-    omega_wheel_dot[0] = (100-Fw[0][0]*rw[0] )/i_wheel;
-
-    omega_wheel_dot[0] = (100-Fw[0][0]*rw[0] )/i_wheel;
-
-    /////////////////test
+    /////////////////test finish/////////////////
 
 
 
 	//ROS_INFO_STREAM("received path commands, flag_pc_cmd is set to)"<<vb_dot[0]));
-	std::cerr << "vb_dot[0]: " << vb_dot[0] << std::endl;
-	std::cerr << "vb_dot[1]: " << vb_dot[1] << std::endl;
-	std::cerr << "omegab_dot[2]: " << omegab_dot[2] << std::endl;
-	std::cerr << "omega_wheel_dot[0]: " << omega_wheel_dot[0] << std::endl;
-	std::cerr << "omega_wheel_dot[1]: " << omega_wheel_dot[1] << std::endl;
-
-	std::cerr << "v_body[0]: " << v_body[0] << std::endl;
-		std::cerr << "v_body[1]: " << v_body[1] << std::endl;
-		std::cerr << "omega_body[2]: " << omega_body[2] << std::endl;
-		std::cerr << "omega_w[0]: " << omega_w[0] << std::endl;
-		std::cerr << "omega_w[1]: " << omega_w[1] << std::endl;
 
 
-	std::cerr << "Fw[0][0]: " << Fw[0][0] << std::endl;
-	std::cerr << "Fw[1][0]: " << Fw[1][0] << std::endl;
-	std::cerr << "Fw[0][1]: " << Fw[0][1] << std::endl;
-	std::cerr << "Fw[1][1]: " << Fw[1][1] << std::endl;
-
-	std::cerr << "sx[0]:" << sx[0] << std::endl;
-	std::cerr << "sx[1]:" << sx[1] << std::endl;
-	std::cerr << "sy[0]:" << sy[0] << std::endl;
-	std::cerr << "sy[1]:" << sy[1] << std::endl;
-
-	std::cerr << "T_emax:" << T_emax << std::endl;
-	std::cerr << "T_prop[0]: " << T_prop[0] << std::endl;
-	std::cerr << "T_prop[1]: " << T_prop[1] << std::endl;
-	std::cerr << "T_brk[0]: " << T_brk[0] << std::endl;
-	std::cerr << "T_brk[1]: " << T_brk[1] << std::endl;
-	std::cerr << "T_roll[0]: " << T_roll[0] << std::endl;
+//	std::cerr << "omega_w[0]: " << omega_w[0]  << "  omega_w[1]: " << omega_w[1] << std::endl;
+//
+//	std::cerr << "v_body[0]: " << v_body[0]
+//	                                     << "	v_body[1]: " << v_body[1]
+//<< "	omega_body[2]: " << omega_body[2] << std::endl;
 
 
-	std::cerr << "T_roll[1]: " << T_roll[1] << std::endl;
-
-	std::cerr << "i_gear: " << i_gear << std::endl;
-	std::cerr << "agear_diff: " << agear_diff << std::endl;
+//	std::cerr << "omega_wheel_dot[0]: " << omega_wheel_dot[0] <<
+//			"  omega_wheel_dot[1]: " << omega_wheel_dot[1] << std::endl;
+//	std::cerr << "vb_dot[0]: " << vb_dot[0] <<
+//			"  vb_dot[1]: " << vb_dot[1] << std::endl;
+//	std::cerr << "omegab_dot[2]: " << omegab_dot[2] << std::endl;
+////
+//
+//	std::cerr << "Fw[0][0]: " << Fw[0][0]
+//	          << "  Fw[1][0]: " << Fw[1][0]
+//      << "   Fw[0][1]: " << Fw[0][1]<<
+//      "   Fw[1][1]: " << Fw[1][1] << std::endl;
+//
+//	std::cerr << "sx[0]:" << sx[0]
+//			<< "	sx[1]:" << sx[1]
+//         << "	sy[0]:" << sy[0]
+//           << "	sy[1]:" << sy[1] << std::endl;
+//
+//	std::cerr << "T_emax:" << T_emax << std::endl;
+//
+//	std::cerr << "T_prop[0]: " << T_prop[0]
+// << "	T_prop[1]: " << T_prop[1]
+//<< "	T_brk[0]: " << T_brk[0]
+// << "	T_brk[1]: " << T_brk[1]
+//<< "	T_roll[0]: " << T_roll[0]
+//<< "	T_roll[1]: " << T_roll[1] << std::endl;
+//
+//	std::cerr << "i_gear: " << i_gear
+//<< "	agear_diff: " << agear_diff << std::endl;
 
 
 
@@ -390,6 +390,7 @@ void dynamics::integrator(void){
 
 	T_b_general = T_b_general + T_samp*T_b_dot_general;
 
+
 	//body:
 	for(int i = 0; i < 3; i++){
 		v_body[i] = v_body[i] + vb_dot[i]*T_samp;
@@ -399,11 +400,17 @@ void dynamics::integrator(void){
 
 	//wheel:
 	for(int j = 0; j < 2; j++){
-		omega_w[j] = omega_wheel_dot[j]*T_samp;
+		omega_w[j] = omega_wheel_dot[j]*T_samp + omega_w[j];
 	}
 
 	//agear
 	agear = agear_diff + agear;
+
+	std::cerr << "angular velocity of wheel: " << omega_w[0]  << "," <<  omega_w[1] << std::endl;
+	std::cerr << "angular acc of wheel:  " << omega_wheel_dot[0] << ","  << omega_wheel_dot[1] << std::endl;
+
+	std::cerr << "body velocity (x, y, rot z): " << v_body[0] << "," << v_body[1] << "," << omega_body[2] << std::endl;
+	std::cerr << "body acc (x, y, rot z): " << vb_dot[0]  << "," << vb_dot[1]  << "," << omegab_dot[2] << std::endl;
 
 }
 

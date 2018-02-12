@@ -29,6 +29,7 @@ public:
 
 	///////////////////the parameters of the vehicle//////////////////////
 
+	double PI;
 	//relate to wheels
 	double rw[2];  //the radius of the wheel
 	double cp;  //parameter of cornering stiffness
