@@ -29,23 +29,27 @@ public:
 		double omega_w[2];
 		//braking torque:
 		double T_b_general;
+		double Ttop;
+		double T_new_req;
 	} state_vehicle;
 
 	typedef struct
-		{
-		double vb_dot[3];  //dot of velocity of body
-			//the derivative of angular velocity of the wheel
-			double omegab_dot[3];  //dot of angular velocity of body
-			double omega_wheel_dot[2];
-			double T_b_dot_general; //dot of T_b
-		} diff_vehicle;
+	{
+	double vb_dot[3];  //dot of velocity of body
+		//the derivative of angular velocity of the wheel
+		double omegab_dot[3];  //dot of angular velocity of body
+		double omega_wheel_dot[2];
+		double T_b_dot_general; //dot of T_b
+		double Ttop_dot;
+		double T_new_req_dot;
+	} diff_vehicle;
 
-		typedef struct
-				{
-			double A_ped;   //pedal
-			double B_ped;  //brake
-			double steering_angle;
-				} input_vehicle;
+	typedef struct
+	{
+		double A_ped;   //pedal
+		double B_ped;  //brake
+		double steering_angle;
+	} input_vehicle;
 
 
 	//the functions:
@@ -53,6 +57,7 @@ public:
 	void te(int x);
 	void integrator(void);
 	double max_dynamics(double a, double b);
+	double min_dynamics(double a, double b);
 	double abs_dynamics(double a);
 	double CalcEngineMaxTorque(double m_engineSpeed);
 
@@ -93,8 +98,8 @@ public:
 	double eta_tr;
 	double eta_fd;
 	double r_gear;
-	double i_tm[10]; //gear ration for each gear
-	double velocity_bound[2][10];
+	double i_tm[12]; //gear ration for each gear
+
 
 	//upper and lower bounds of acceleration limits,
 	double a_xupper;
