@@ -266,13 +266,13 @@ void dynamics::diff_equation(state_vehicle &state, input_vehicle &input,  double
 	//power strain, XC90:
 	double omega_d, omega_d_dot;
 
-	if(drive_flag = 0)
+	if(drive_flag == 0)
 	{
 		omega_d =  (omega_w[0] + omega_w[1])/2;
 		omega_d_dot = (diff_global.omega_wheel_dot[0] + diff_global.omega_wheel_dot[1])/2;
 	}
 
-	if(drive_flag = 1){
+	if(drive_flag == 1){
 		omega_d =  omega_w[1];
 		omega_d_dot =   diff_global.omega_wheel_dot[1];
 	}
@@ -348,8 +348,8 @@ void dynamics::diff_equation(state_vehicle &state, input_vehicle &input,  double
 	else
 		Te = Teaped*((diff_global.vb_dot[0]-a_xlower)*(Efactor-1)/(a_xupper - a_xlower)+1);
 
-//	T_emax = 700;
-//	Te = T_emax;
+	T_emax = 700;
+	Te = T_emax;
 
 	//omega_e_dot = (Te-Tc)/Je;
 	double Tc;
@@ -373,11 +373,8 @@ void dynamics::diff_equation(state_vehicle &state, input_vehicle &input,  double
 
 
 	double Tt = Tc;
-
 	double Tp = eta_tr*Tt*i_gear;
-
 	double Tf = Tp;
-
 	double Td = Tf*eta_fd*i_final;
 
 	//XC90:
@@ -385,11 +382,11 @@ void dynamics::diff_equation(state_vehicle &state, input_vehicle &input,  double
 	double Twr;
 
 	//int drive_flag = 1;  // 1: rear driving, 0: rear and front driving
-	if(drive_flag = 0){
+	if(drive_flag == 0){
 		Twf = 0.4*Td;
 		Twr = 0.6*Td;
 	}
-	if(drive_flag = 1){
+	if(drive_flag == 1){
 		Twf = 0;
 		Twr = 1*Td;
 	}
@@ -409,9 +406,6 @@ void dynamics::diff_equation(state_vehicle &state, input_vehicle &input,  double
 
 //	T_prop[0] = 50; //test
 //	T_prop[1] = 50;  //test
-
-
-
 
 
 	//derivative part:
@@ -436,7 +430,7 @@ void dynamics::diff_equation(state_vehicle &state, input_vehicle &input,  double
 
 		//out.omega_wheel_dot[i]= (T_prop[i] - T_brk[i] - forceinducedtorque - T_roll[i])/Iw[i];
 
-     	Je = 0; //if the flywheel is not considered
+     	//Je = 0; //if the flywheel is not considered
 		out.omega_wheel_dot[i]=  (Te_direct[i] - 1/(k_tau_ctow)*(T_brk[i] + forceinducedtorque + T_roll[i] ))
 				/(Je*k_speed_wtoe + Iw[i]/k_tau_ctow);
 
@@ -462,7 +456,7 @@ void dynamics::diff_equation(state_vehicle &state, input_vehicle &input,  double
 
 	if ((v_body[0] > velocity_bound[0][agear-1]) && (agear <=11) )//upper bound
 		agear_diff = 1;
-	else if ( (v_body[0] < velocity_bound[1][agear-1]) && (agear >=2))  //lower bound
+	else if ( (v_body[0] < velocity_bound[1][agear-1]) && (agear >= 2))  //lower bound
 		agear_diff = -1;
 	else
 		agear_diff = 0;
@@ -526,7 +520,7 @@ void dynamics::diff_equation(state_vehicle &state, input_vehicle &input,  double
 //           << "	sy[1]:" << sy[1] << std::endl;
 //
 	std::cerr << "Tc:" << Tc << "	Te:" << Te << "	Temx:" << T_emax << "  speed of engine:" << omega_e
-			<<" final speed:" << omega_f<<std::endl;
+			<<"  speed:" << omega_f<<std::endl;
 //
 //	std::cerr << "T_emax:" << T_emax << std::endl;
 //
