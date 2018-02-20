@@ -803,8 +803,8 @@ double dynamics::GetEngineTorque() const{
 	return Te;
 }
 
-void dynamics::SetAcceleratorPedalPosition(double speed){
-	input_global.A_ped = speed;
+void dynamics::SetAcceleratorPedalPosition(double pos){
+	input_global.A_ped = pos;
 }
 
 int32_t dynamics::GetGear() const{
