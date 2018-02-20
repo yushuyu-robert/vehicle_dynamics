@@ -22,7 +22,7 @@ ros::Subscriber sub;
 //vehicle dynamics
 dynamics thisdynamics;
 
-double timer = 0.001;
+double timer = 0.0001;
 
 
 double omega_w = 0;
@@ -42,7 +42,7 @@ int main(int argc, char **argv)
 
 	thisdynamics.T_samp = timer;
 
-	double duration = 10;
+	double duration = 100;
 
 	while(thisdynamics.T_global <= duration ){
 	    eachstep();

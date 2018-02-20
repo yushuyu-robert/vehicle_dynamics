@@ -14,8 +14,6 @@
 
 
 
-//from 22nd, Jan., 2017,  the dynamics of the vehicles
-
 
 class dynamics{
 public:
@@ -60,6 +58,28 @@ public:
 	double min_dynamics(double a, double b);
 	double abs_dynamics(double a);
 	double CalcEngineMaxTorque(double m_engineSpeed);
+
+	//interface functions of body:
+    double GetLateralAcceleration() const;
+    double GetLateralVelocity() const;
+    double GetLongitudinalAcceleration() const;
+    double GetLongitudinalVelocity() const;
+    double GetYawAcceleration() const;
+    double GetYawVelocity() const;
+
+	//interface functions of power:
+    double CalcEngineMaxTorque() const;
+    double GetAcceleratorPedalPosition() const;
+    double GetEngineSpeed() const;
+    double GetEngineTorque() const;
+    int32_t GetGear() const;
+    void SetAcceleratorPedalPosition(double);
+
+    //interface functions of wheel:
+    double GetFrontWheelSpeed() const;
+    double GetRearWheelSpeed() const;
+    double GetRoadWheelAngle() const;
+    void SetRoadWheelAngle(double);
 
 
 	state_vehicle state_global;
@@ -118,8 +138,6 @@ public:
 //	double B_ped;  //brake
 //	double steering_angle;
 
-
-
 //	/////////////////////////states/////////////////////////////////////
 //	//the velocity of the vehicle, expressed in the body frame of the vehicle
 //	double v_body[3];
@@ -146,6 +164,9 @@ public:
 	int agear_diff;
 
 private:
+	double T_emax;
+	double omega_e;
+	double Te;
 
 };
 

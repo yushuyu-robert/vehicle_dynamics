@@ -1,9 +1,11 @@
+/*
+ * dynamics_vehicle.cpp
+ *
+ *  Created on: Jan 22, 2018
+ *      Author: yushu
+ */
 
 #include "dynamics_vehicle.h"
-
-
-
-
 
 
 dynamics::dynamics(){
@@ -113,6 +115,10 @@ dynamics::dynamics(){
 
 	agear = 6;
 	agear_diff = 0;
+
+	T_emax = 0;
+	omega_e = 0;
+	Te = 0;
 
 }
 
@@ -233,7 +239,6 @@ void dynamics::diff_equation(state_vehicle &state, input_vehicle &input,  double
 	double Fy;
 
 	//x direction, body frame
-
 	if(v_body[0] > 0.00){
 		F_d[0] = 0.5*rou*C_d*A*v_body[0]*v_body[0];
 		F_g[0] = mass*g*sin(theta_g);
@@ -249,7 +254,6 @@ void dynamics::diff_equation(state_vehicle &state, input_vehicle &input,  double
 	Fx = Fv[0][0] + Fv[0][1] - F_d[0] -F_g[0];
 
 	//Fx = Fv[0][0] + Fv[0][1]; //test
-
 
 
 	//y direction, body frame
@@ -282,7 +286,6 @@ void dynamics::diff_equation(state_vehicle &state, input_vehicle &input,  double
 	omega_f = omega_d*i_final;
 	omega_f_dot = omega_d_dot*i_final;
 
-
 	double omega_p, omega_p_dot;
 	omega_p = omega_f;
 	omega_p_dot = omega_f_dot;
@@ -297,37 +300,32 @@ void dynamics::diff_equation(state_vehicle &state, input_vehicle &input,  double
 	omega_c = omega_t;
 	omega_c_dot = omega_t_dot;
 
-	double omega_e, omega_e_dot;
+	double  omega_e_dot;
 	omega_e = omega_c;
 	omega_e_dot =  omega_c_dot;
 
+	if (omega_e < 3)
+	{
+//		Teaped=10;
+//		T_emax = 10;
+		omega_e = 3;  //need initial speed to generate torque at initial time
+	}
 
-	double T_emax;
 	T_emax = CalcEngineMaxTorque(omega_e);  //3.30
-
 
 	A_ped = 10; //test
   //  A_ped = T_global * 10;
 	double Teaped;
 	Teaped = A_ped*0.01*T_emax;
 
-	if ((omega_e == 0) &&(A_ped >0 ))
-	{
-		Teaped=1;
-		T_emax = 1;
-	}
 
 	double T_alim;
-
 	if(diff_global.vb_dot[0] > a_xupper)
 		T_alim = Efactor*Teaped;
 	else if (diff_global.vb_dot[0] < a_xlower)
 		T_alim = Teaped;
 	else
 		T_alim = Teaped*((diff_global.vb_dot[0]-a_xlower)*(Efactor-1)/(a_xupper - a_xlower)+1);
-
-
-	double Te;
 
 	out.T_new_req_dot = Teaped - T_new_req;
 
@@ -530,8 +528,8 @@ void dynamics::diff_equation(state_vehicle &state, input_vehicle &input,  double
 //         << "	sy[0]:" << sy[0]
 //           << "	sy[1]:" << sy[1] << std::endl;
 //
-	std::cerr << "Tc:" << Tc << "	Te:" << Te << "	Temx:" << T_emax << "  speed of engine:" << omega_e
-			<<"  speed:" << omega_f<<std::endl;
+	std::cerr  << "Te: " << Te << "	Temx:" << T_emax << "  Engine speed :" << omega_e
+			<<"  speed f:" << omega_f<<std::endl;
 //
 //	std::cerr << "T_emax:" << T_emax << std::endl;
 //
@@ -542,9 +540,6 @@ void dynamics::diff_equation(state_vehicle &state, input_vehicle &input,  double
 //<< "	T_roll[0]: " << T_roll[0]
 //<< "	T_roll[1]: " << T_roll[1] << std::endl;
 //
-
-
-
 
 
 }
@@ -756,13 +751,12 @@ double dynamics::CalcEngineMaxTorque(double m_engineSpeed) {
 
 		if (m_engineSpeed >= x1 && m_engineSpeed < x2) {
  	      double const r = (m_engineSpeed - x1) / (x2 - x1);
-//
+
     	  double const y1 = torqueLookupTable[i][1];
 		  double const y2 = torqueLookupTable[i+1][1];
-//
  		  double const maxTorque = y1 + r * (y2 - y1);
 
-		  return y2;
+		  return maxTorque;
 		}
 	}
 
@@ -770,7 +764,65 @@ double dynamics::CalcEngineMaxTorque(double m_engineSpeed) {
 	return 0.0;
 }
 
+double dynamics::GetLongitudinalVelocity() const{
+	return state_global.v_body[0];
+}
+
+double dynamics::GetLateralAcceleration() const{
+	return diff_global.vb_dot[1];
+
+}
+double dynamics::GetLateralVelocity() const{
+	return state_global.v_body[1];
+
+}
+double dynamics::GetLongitudinalAcceleration() const{
+	return diff_global.vb_dot[0];
+}
+
+double dynamics::GetYawAcceleration() const{
+	return diff_global.omegab_dot[2];
+}
+double dynamics::GetYawVelocity() const{
+	return state_global.omega_body[2];
+}
+
+double dynamics::CalcEngineMaxTorque() const{
+	return T_emax;
+}
+
+double dynamics::GetAcceleratorPedalPosition() const{
+	return input_global.A_ped;
+}
+
+double dynamics::GetEngineSpeed() const{
+	return omega_e;
+}
+
+double dynamics::GetEngineTorque() const{
+	return Te;
+}
+
+void dynamics::SetAcceleratorPedalPosition(double speed){
+	input_global.A_ped = speed;
+}
+
+int32_t dynamics::GetGear() const{
+	return agear;
+}
 
 
+double dynamics::GetFrontWheelSpeed() const{
+	return state_global.omega_w[0];
+}
+double dynamics::GetRearWheelSpeed() const{
+	return state_global.omega_w[1];
+}
+double dynamics::GetRoadWheelAngle() const{
+	return input_global.steering_angle;
+}
+void dynamics::SetRoadWheelAngle(double a){
+	input_global.steering_angle = a;
+}
 
 
