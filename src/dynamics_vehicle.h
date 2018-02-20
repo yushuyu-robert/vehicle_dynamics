@@ -113,10 +113,10 @@ public:
 	double T_prop[2];
 	double T_brk[2];
 
-	/////////////////////////////input//////////////////////////////
-	double A_ped;   //pedal
-	double B_ped;  //brake
-	double steering_angle;
+//	/////////////////////////////input//////////////////////////////
+//	double A_ped;   //pedal
+//	double B_ped;  //brake
+//	double steering_angle;
 
 
 

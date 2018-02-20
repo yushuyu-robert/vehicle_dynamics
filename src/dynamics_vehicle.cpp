@@ -111,7 +111,7 @@ dynamics::dynamics(){
 	T_samp = 1;
 	T_global = 0;
 
-	agear = 1;
+	agear = 6;
 	agear_diff = 0;
 
 }
@@ -234,7 +234,7 @@ void dynamics::diff_equation(state_vehicle &state, input_vehicle &input,  double
 
 	//x direction, body frame
 
-	if(v_body[0]>0.00){
+	if(v_body[0] > 0.00){
 		F_d[0] = 0.5*rou*C_d*A*v_body[0]*v_body[0];
 		F_g[0] = mass*g*sin(theta_g);
 	}
@@ -306,7 +306,7 @@ void dynamics::diff_equation(state_vehicle &state, input_vehicle &input,  double
 	T_emax = CalcEngineMaxTorque(omega_e);  //3.30
 
 
-	A_ped = 1; //test
+	A_ped = 10; //test
   //  A_ped = T_global * 10;
 	double Teaped;
 	Teaped = A_ped*0.01*T_emax;
@@ -348,8 +348,8 @@ void dynamics::diff_equation(state_vehicle &state, input_vehicle &input,  double
 	else
 		Te = Teaped*((diff_global.vb_dot[0]-a_xlower)*(Efactor-1)/(a_xupper - a_xlower)+1);
 
-	T_emax = 700;
-	Te = T_emax;
+	//T_emax = 700;
+	//Te = T_emax;
 
 	//omega_e_dot = (Te-Tc)/Je;
 	double Tc;
@@ -454,12 +454,23 @@ void dynamics::diff_equation(state_vehicle &state, input_vehicle &input,  double
 	{{2.31,3,3.81,4.05,4.25,5.05,8.25,9.85,13.45,15.78,21.1,1000000},
 	 {-1000000,2.2,2.28,3.5,3.9,4.1,4.77,6.1,6.5,8.5, 14.5,20}};
 
-	if ((v_body[0] > velocity_bound[0][agear-1]) && (agear <=11) )//upper bound
-		agear_diff = 1;
-	else if ( (v_body[0] < velocity_bound[1][agear-1]) && (agear >= 2))  //lower bound
-		agear_diff = -1;
-	else
-		agear_diff = 0;
+	if(mass > 12000){
+
+		if ((v_body[0] > velocity_bound[0][agear-1]) && (agear <=11) )//upper bound
+			agear_diff = 1;
+		else if ( (v_body[0] < velocity_bound[1][agear-1]) && (agear >= 2))  //lower bound
+			agear_diff = -1;
+		else
+			agear_diff = 0;
+	}
+	else{
+		if ((v_body[0] > velocity_bound[0][agear-1]) && (agear <=11) )//upper bound
+			agear_diff = 1;
+		else if ( (v_body[0] < velocity_bound[1][agear-1]) && (agear >= 7))  //lower bound
+			agear_diff = -1;
+		else
+			agear_diff = 0;
+	}
 
 
 
@@ -653,7 +664,9 @@ void dynamics::integrator(void){
 //
 	std::cerr << "i_gear: " << i_gear
 << "	a_gear: " << agear << "	diff_gear: " << agear_diff << std::endl;
-//
+
+	std::cerr << "Time: "   << T_global << std::endl;
+
     std::cerr << std::endl;
 
 }

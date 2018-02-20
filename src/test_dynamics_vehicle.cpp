@@ -42,7 +42,7 @@ int main(int argc, char **argv)
 
 	thisdynamics.T_samp = timer;
 
-	double duration = 500;
+	double duration = 10;
 
 	while(thisdynamics.T_global <= duration ){
 	    eachstep();
