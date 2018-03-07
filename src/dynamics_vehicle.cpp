@@ -172,8 +172,6 @@ void dynamics::diff_equation(state_vehicle &state, input_vehicle &input,  double
 	double T_b_general;
 	double Ttop;
 	double T_new_req;
-
-
 //	double vb_dot[3];  //dot of velocity of body
 //	//the derivative of angular velocity of the wheel
 //	double omegab_dot[3];  //dot of angular velocity of body
@@ -193,7 +191,6 @@ void dynamics::diff_equation(state_vehicle &state, input_vehicle &input,  double
 		T_b_general = state.T_b_general;
 		Ttop = state.Ttop;
 		T_new_req = state.T_new_req;
-
 
 	//wheel
 	double f_sxy[2];  //3.14, middle variable
@@ -239,7 +236,6 @@ void dynamics::diff_equation(state_vehicle &state, input_vehicle &input,  double
 		}
 		else
 			T_roll[i] = 0;
-
 		//T_roll[i] = 0;  //test
 
 		//force actuated on body, body frame
@@ -337,11 +333,11 @@ void dynamics::diff_equation(state_vehicle &state, input_vehicle &input,  double
 
 	//A_ped = 10; //test
   //  A_ped = T_global * 10;  //test
-	if  ( (omega_e < 50) && (A_ped > 0))
+	if  ( (omega_e < 20) && (A_ped > 0))
 	{
 //		Teaped=10;  //test
 //		T_emax = 10;  //test
-		omega_e = 50;  //need initial speed to generate torque at initial time
+		omega_e = 20;  //need initial speed to generate torque at initial time
 	}
 
 	T_emax = CalcEngineMaxTorque(omega_e);  //3.30
@@ -367,6 +363,7 @@ void dynamics::diff_equation(state_vehicle &state, input_vehicle &input,  double
 	out.Ttop_dot = k*(Tdynreq - Ttop);
 	Te = Tbase + Ttop;
 
+	//(3.30)-(3.32):
 //	if(diff_global.vb_dot[0] > a_xupper)
 //		Te = Efactor*Teaped;
 //	else if (diff_global.vb_dot[0] < a_xlower)
@@ -384,7 +381,7 @@ void dynamics::diff_equation(state_vehicle &state, input_vehicle &input,  double
 
 	//Tc = Te - Je*(omega_e_dot);
 
-//	Te = 100;
+//	Te = 100;  //test
 //	Tc = Te; //test
 //	Tc = Te - Je*omega_e_dot;
 
@@ -396,7 +393,6 @@ void dynamics::diff_equation(state_vehicle &state, input_vehicle &input,  double
 //	}
 	//Tc = (Iw[1] * Te + k_speed_wtoe*Je*f2[1])/(Iw[1]  + k_speed_wtoe*Je*k_tau_ctow); //according to Je*\dot omega_e = Te - Tc
 	//Tc = Te;
-
 
 	double Tt = Tc;
 	double Tp = eta_tr*Tt*i_gear;
@@ -450,9 +446,6 @@ void dynamics::diff_equation(state_vehicle &state, input_vehicle &input,  double
 				/(Je*k_speed_wtoe + Iw[i]/k_tau_ctow);
 
 	}
-
-	//if the powerstrain is considered:
-
 
 	//derivative of body rotational velocity
 	out.omegab_dot[2] = (lf*Fv[1][0] - lr* Fv[1][1])/Izz;
