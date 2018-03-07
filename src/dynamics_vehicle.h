@@ -14,42 +14,40 @@
 
 
 
+typedef struct
+{
+	double v_body[3];
+	double omega_body[3];  //angular velocity, body frame
+	//the angular velocity of the wheel
+	double omega_w[2];
+	//braking torque:
+	double T_b_general;
+	double Ttop;
+	double T_new_req;
+} state_vehicle;
+
+typedef struct
+{
+double vb_dot[3];  //dot of velocity of body
+	//the derivative of angular velocity of the wheel
+	double omegab_dot[3];  //dot of angular velocity of body
+	double omega_wheel_dot[2];
+	double T_b_dot_general; //dot of T_b
+	double Ttop_dot;
+	double T_new_req_dot;
+} diff_vehicle;
+
+typedef struct
+{
+	double A_ped;   //pedal
+	double B_ped;  //brake
+	double steering_angle;
+} input_vehicle;
+
 
 class dynamics{
 public:
 	dynamics();
-
-	typedef struct
-	{
-		double v_body[3];
-		double omega_body[3];  //angular velocity, body frame
-		//the angular velocity of the wheel
-		double omega_w[2];
-		//braking torque:
-		double T_b_general;
-		double Ttop;
-		double T_new_req;
-	} state_vehicle;
-
-	typedef struct
-	{
-	double vb_dot[3];  //dot of velocity of body
-		//the derivative of angular velocity of the wheel
-		double omegab_dot[3];  //dot of angular velocity of body
-		double omega_wheel_dot[2];
-		double T_b_dot_general; //dot of T_b
-		double Ttop_dot;
-		double T_new_req_dot;
-	} diff_vehicle;
-
-	typedef struct
-	{
-		double A_ped;   //pedal
-		double B_ped;  //brake
-		double steering_angle;
-	} input_vehicle;
-
-
 	//the functions:
 	void diff_equation(state_vehicle &x, input_vehicle &u,  double t, diff_vehicle &out);
 	void integrator(void);
@@ -79,7 +77,6 @@ public:
 	double GetRoadWheelAngle() const;
     void SetRoadWheelAngle(double);
 
-
 	state_vehicle state_global;
 	diff_vehicle diff_global;
 	input_vehicle input_global;
@@ -93,8 +90,6 @@ public:
 	double mu;   //friction coefficient
 	double Iw[2]; //the inertia of the wheel
 	double fr[2];  //rolling resistance coefficient
-
-
 	double mass; //mass
 	double g;  //acc due to gravity
 	double rou;
@@ -104,8 +99,6 @@ public:
 	double lf;
 	double lr;
 	double Izz;
-
-
 	double Je;
 
 	//the fraction by which the engine torque is reduced
@@ -131,8 +124,6 @@ public:
 	double T_prop[2];
 	double T_brk[2];
 
-
-
 ////others:
 	//time step:
 	double T_samp;
@@ -144,7 +135,6 @@ public:
 private:
 	double omega_e;
 	double Te;
-
 };
 
 #endif /* DYNAMICS_VEHICLE_H_ */
