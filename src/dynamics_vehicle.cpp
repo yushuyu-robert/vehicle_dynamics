@@ -8,7 +8,37 @@
 #include "dynamics_vehicle.h"
 
 
-dynamics::dynamics()
+dynamics::dynamics():
+state_global({{0,0,0},{0,0,0},{0,0},0,0,0}),
+diff_global({{0,0,0},{0,0,0},{0,0},0,0,0}),
+input_global({1,2,3}),
+PI (3.14159265),
+cp ( 20),  //parameter of cornering stiffness
+mu ( 0.9),   //friction coefficient
+mass ( 9840), //mass, FH16
+g ( 9.8),  //acc due to gravity
+rou ( 1.225),  C_d ( 0.7),  A ( 10),//coefficient of air drag, FH16
+theta_g ( 0), //slope
+lf ( 1.68),  //FH16
+lr ( 1.715),   //FH16
+Izz ( 41340),  //FH16
+Je ( 4),  //flywheel inertia, FH16
+Efactor ( 0.5), ////fh16
+i_final ( 3.46),  //FH16
+i_gear(11.73),
+eta_tr ( 1),  //efficient, FH16
+eta_fd ( 0.9), //efficient, FH16
+r_gear ( 0), //the flag of backward
+a_xupper ( 1.35), //fh16
+a_xlower ( 1.1),  //fh16
+T_bmax ( 15000),
+kb ( 2.25),
+T_samp ( 0.001),
+T_global ( 0),
+agear ( 6),
+agear_diff ( 0),
+omega_e ( 0),
+Te ( 0)
 {
 	///////////////////the parameters of the vehicle//////////////////////
 
@@ -73,8 +103,8 @@ dynamics::dynamics()
 	a_xlower = 1.1;  //fh16
 
 	//relating to brake:
-	T_bmax = 0;
-	kb = 0;
+	T_bmax = 15000;
+	kb = 2.25;
 
 	T_prop[0] = 0;  T_prop[1] = 0;
 	T_brk[0] = 0;   T_brk[1] = 0;
@@ -108,7 +138,7 @@ dynamics::dynamics()
 	state_global.Ttop = 0;
 
 	//time step:
-	T_samp = 1;
+	T_samp = 0.001;
 	T_global = 0;
 
 	agear = 6;
@@ -191,20 +221,21 @@ void dynamics::diff_equation(state_vehicle &state, input_vehicle &input,  double
 		sxy[i] = sqrt(sx[i]*sx[i] + sy[i]*sy[i]);
 
 		f_sxy[i] = 2/PI*atan(2*cp*sxy[i]/PI);
-		Fz[i] = mass*g*cos(theta_g)/2;
+		//Fz[i] = mass*g*cos(theta_g)/2;
+		Fz[0] = mass*g*cos(theta_g)*lf/(lf+lr);
+		Fz[1] = mass*g*cos(theta_g)*lr/(lf+lr);
 		Fxy[i] = mu*Fz[i]*f_sxy[i];
 //		Fw[0][i] =(rw[i]*omega_w[i] - vb_wheel[0][i])*Fxy[i] / sqrt((rw[i]*omega_w[i] - vb_wheel[0][i])*(rw[i]*omega_w[i]
 //		             - vb_wheel[0][i]) + vb_wheel[1][i] * vb_wheel[1][i]);
 //		Fw[1][i] = - vb_wheel[1][i]*Fxy[i] / sqrt((rw[i]*omega_w[i] - vb_wheel[0][i])*(rw[i]*omega_w[i] - vb_wheel[0][i]) + vb_wheel[1][i] * vb_wheel[1][i]);
-
 		Fw[0][i] = Fxy[i]*sx[i]/max_dynamics(sxy[i],0.1);
 		Fw[1][i] = Fxy[i]*sy[i]/max_dynamics(sxy[i],0.1);
 
 		if (omega_w[i] > 0.00000){
-			T_roll[i] = fr[i]*mass*g*rw[i]/2;
+			T_roll[i] = fr[i]*Fz[i]*rw[i];
 		}
 		else if (omega_w[i] < -0.00000){
-			T_roll[i] = -fr[i]*mass*g*rw[i]/2;
+			T_roll[i] = -fr[i]*Fz[i]*rw[i];
 		}
 		else
 			T_roll[i] = 0;
@@ -219,19 +250,17 @@ void dynamics::diff_equation(state_vehicle &state, input_vehicle &input,  double
 	//brake for XC90:
 	double T_req = T_bmax*0.01*B_ped;
 
-	//test:
-//	T_brk[0] = T_b_general/2;
-//	T_brk[1] = T_b_general/2;
-//
-//	T_brk[0] = 0;
-//	T_brk[1] = 0;
+ 	T_brk[0] = T_b_general;
+ 	T_brk[1] = T_b_general;
+
+//	T_brk[0] = 0; //test
+//	T_brk[1] = 0; //test
 	for(int j = 0; j < 2; j++){
 		if(omega_w[j] < 0)
 			T_brk[j] = -abs_dynamics(T_brk[j]);
 		else if(omega_w[j] > 0)
 			T_brk[j] =  abs_dynamics(T_brk[j]);
 	}
-
 
 	//body:
 	double F_d[2];
@@ -282,7 +311,6 @@ void dynamics::diff_equation(state_vehicle &state, input_vehicle &input,  double
 		omega_d_dot =   diff_global.omega_wheel_dot[1];
 	}
 
-
 	double omega_f, omega_f_dot;
 	omega_f = omega_d*i_final;
 	omega_f_dot = omega_d_dot*i_final;
@@ -308,19 +336,18 @@ void dynamics::diff_equation(state_vehicle &state, input_vehicle &input,  double
 	double T_emax;
 
 	//A_ped = 10; //test
-  //  A_ped = T_global * 10;
-	if  ( (omega_e < 3) && (A_ped > 0))
+  //  A_ped = T_global * 10;  //test
+	if  ( (omega_e < 50) && (A_ped > 0))
 	{
-//		Teaped=10;
-//		T_emax = 10;
-		omega_e = 3;  //need initial speed to generate torque at initial time
+//		Teaped=10;  //test
+//		T_emax = 10;  //test
+		omega_e = 50;  //need initial speed to generate torque at initial time
 	}
 
 	T_emax = CalcEngineMaxTorque(omega_e);  //3.30
 
 	double Teaped;
 	Teaped = A_ped*0.01*T_emax;
-
 
 	double T_alim;
 	if(diff_global.vb_dot[0] > a_xupper)
@@ -340,14 +367,12 @@ void dynamics::diff_equation(state_vehicle &state, input_vehicle &input,  double
 	out.Ttop_dot = k*(Tdynreq - Ttop);
 	Te = Tbase + Ttop;
 
-	//Te = 700;
-
-	if(diff_global.vb_dot[0] > a_xupper)
-		Te = Efactor*Teaped;
-	else if (diff_global.vb_dot[0] < a_xlower)
-		Te = T_emax;
-	else
-		Te = Teaped*((diff_global.vb_dot[0]-a_xlower)*(Efactor-1)/(a_xupper - a_xlower)+1);
+//	if(diff_global.vb_dot[0] > a_xupper)
+//		Te = Efactor*Teaped;
+//	else if (diff_global.vb_dot[0] < a_xlower)
+//		Te = T_emax;
+//	else
+//		Te = Teaped*((diff_global.vb_dot[0]-a_xlower)*(Efactor-1)/(a_xupper - a_xlower)+1);
 
 	//T_emax = 700;
 	//Te = T_emax;
@@ -405,27 +430,17 @@ void dynamics::diff_equation(state_vehicle &state, input_vehicle &input,  double
 		T_prop[1] = max_dynamics(Twr, 0);
 	}
 
-
-
-
 	//derivative part:
-
 	double Te_direct[2];
 	Te_direct[0] = 0;
 	Te_direct[1] = Te;
 
+//	Te_direct[0] = Te;
+//	Te_direct[1] = Te;
+
 	//derivative of wheel rotational velocity
 	for (i=0; i<2; i++){
-		//T_roll[i] = 0; //test
-
 		double forceinducedtorque;
-//		if (omega_w[i]>0.01){
-//			forceinducedtorque = Fw[0][i] * rw[i];
-//		}
-//		else {
-//			forceinducedtorque = Fw[0][i] * rw[i];
-//		}
-
 		forceinducedtorque = Fw[0][i] * rw[i];
 
 		//out.omega_wheel_dot[i]= (T_prop[i] - T_brk[i] - forceinducedtorque - T_roll[i])/Iw[i];
@@ -441,13 +456,11 @@ void dynamics::diff_equation(state_vehicle &state, input_vehicle &input,  double
 
 	//derivative of body rotational velocity
 	out.omegab_dot[2] = (lf*Fv[1][0] - lr* Fv[1][1])/Izz;
-
 	//derivative of body velocity, expressed in body frame:
 	out.vb_dot[0] = ax + v_body[1]*omega_body[2];
 	out.vb_dot[1] = ay - v_body[0]*omega_body[2];
     //dot of T_b:
 	out.T_b_dot_general = kb*(T_req-T_b_general);
-
 
 	//agear
 	double velocity_bound[2][12] =
@@ -526,8 +539,8 @@ void dynamics::diff_equation(state_vehicle &state, input_vehicle &input,  double
 //         << "	sy[0]:" << sy[0]
 //           << "	sy[1]:" << sy[1] << std::endl;
 //
-	std::cerr  << "Te: " << Te << "	Temx:" << T_emax << "  Engine speed :" << omega_e
-			<<"  speed f:" << omega_f<<std::endl;
+	std::cerr  << "Te: " << Te << "	Temx: " << T_emax << "  Engine speed: " << omega_e
+			<<"  speed f: " << omega_f<<std::endl;
 //
 //	std::cerr << "T_emax:" << T_emax << std::endl;
 //
@@ -777,6 +790,14 @@ double dynamics::GetEngineTorque() const{
 
 void dynamics::SetAcceleratorPedalPosition(double pos){
 	input_global.A_ped = pos;
+}
+
+double dynamics::GetBrakePedalPosition() const{
+	return input_global.B_ped;
+}
+
+void dynamics::SetBrakePedalPosition(double pos){
+	input_global.B_ped = pos;
 }
 
 int32_t dynamics::GetGear() const{

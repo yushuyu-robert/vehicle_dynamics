@@ -28,7 +28,7 @@ typedef struct
 
 typedef struct
 {
-double vb_dot[3];  //dot of velocity of body
+	double vb_dot[3];  //dot of velocity of body
 	//the derivative of angular velocity of the wheel
 	double omegab_dot[3];  //dot of angular velocity of body
 	double omega_wheel_dot[2];
@@ -71,18 +71,20 @@ public:
 	int32_t GetGear() const;
 	void SetAcceleratorPedalPosition(double);
 
+	double GetBrakePedalPosition() const;
+	void SetBrakePedalPosition(double);
+
 	//interface functions of wheel:
 	double GetFrontWheelSpeed() const;
 	double GetRearWheelSpeed() const;
 	double GetRoadWheelAngle() const;
-    void SetRoadWheelAngle(double);
+	void SetRoadWheelAngle(double);
 
 	state_vehicle state_global;
 	diff_vehicle diff_global;
 	input_vehicle input_global;
 
 	///////////////////the parameters of the vehicle//////////////////////
-
 	double PI;
 	//relate to wheels
 	double rw[2];  //the radius of the wheel
