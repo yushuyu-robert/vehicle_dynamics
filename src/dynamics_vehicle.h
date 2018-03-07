@@ -59,24 +59,24 @@ public:
 	double CalcEngineMaxTorque(double m_engineSpeed);
 
 	//interface functions of body:
-    double GetLateralAcceleration() const;
-    double GetLateralVelocity() const;
-    double GetLongitudinalAcceleration() const;
-    double GetLongitudinalVelocity() const;
-    double GetYawAcceleration() const;
-    double GetYawVelocity() const;
+	double GetLateralAcceleration() const;
+	double GetLateralVelocity() const;
+	double GetLongitudinalAcceleration() const;
+	double GetLongitudinalVelocity() const;
+	double GetYawAcceleration() const;
+	double GetYawVelocity() const;
 
 	//interface functions of power:
-    double GetAcceleratorPedalPosition() const;
-    double GetEngineSpeed() const;
-    double GetEngineTorque() const;
-    int32_t GetGear() const;
-    void SetAcceleratorPedalPosition(double);
+	double GetAcceleratorPedalPosition() const;
+	double GetEngineSpeed() const;
+	double GetEngineTorque() const;
+	int32_t GetGear() const;
+	void SetAcceleratorPedalPosition(double);
 
-    //interface functions of wheel:
-    double GetFrontWheelSpeed() const;
-    double GetRearWheelSpeed() const;
-    double GetRoadWheelAngle() const;
+	//interface functions of wheel:
+	double GetFrontWheelSpeed() const;
+	double GetRearWheelSpeed() const;
+	double GetRoadWheelAngle() const;
     void SetRoadWheelAngle(double);
 
 
@@ -131,26 +131,6 @@ public:
 	double T_prop[2];
 	double T_brk[2];
 
-//	/////////////////////////////input//////////////////////////////
-//	double A_ped;   //pedal
-//	double B_ped;  //brake
-//	double steering_angle;
-
-//	/////////////////////////states/////////////////////////////////////
-//	//the velocity of the vehicle, expressed in the body frame of the vehicle
-//	double v_body[3];
-//	double omega_body[3];  //angular velocity, body frame
-//	//the angular velocity of the wheel
-//	double omega_w[2];
-//	//braking torque:
-//	double T_b_general;
-//
-//
-//	double vb_dot[3];  //dot of velocity of body
-//	//the derivative of angular velocity of the wheel
-//	double omegab_dot[3];  //dot of angular velocity of body
-//	double omega_wheel_dot[2];
-//	double T_b_dot_general; //dot of T_b
 
 
 ////others:
