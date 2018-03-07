@@ -52,7 +52,6 @@ public:
 
 	//the functions:
 	void diff_equation(state_vehicle &x, input_vehicle &u,  double t, diff_vehicle &out);
-	void te(int x);
 	void integrator(void);
 	double max_dynamics(double a, double b);
 	double min_dynamics(double a, double b);
@@ -68,7 +67,6 @@ public:
     double GetYawVelocity() const;
 
 	//interface functions of power:
-    double CalcEngineMaxTorque() const;
     double GetAcceleratorPedalPosition() const;
     double GetEngineSpeed() const;
     double GetEngineTorque() const;
@@ -117,7 +115,7 @@ public:
 	double i_gear;
 	double eta_tr;
 	double eta_fd;
-	double r_gear;
+	int r_gear;
 	double i_tm[12]; //gear ration for each gear
 
 
@@ -164,7 +162,6 @@ public:
 	int agear_diff;
 
 private:
-	double T_emax;
 	double omega_e;
 	double Te;
 

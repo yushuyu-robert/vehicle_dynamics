@@ -22,7 +22,7 @@ ros::Subscriber sub;
 //vehicle dynamics
 dynamics thisdynamics;
 
-double timer = 0.0001;
+double timer = 0.001;
 
 
 double omega_w = 0;
@@ -44,9 +44,18 @@ int main(int argc, char **argv)
 
 	double duration = 100;
 
-	while(thisdynamics.T_global <= duration ){
+	while(thisdynamics.T_global <= 60 ){
+		thisdynamics.SetAcceleratorPedalPosition(10);
 	    eachstep();
 	}
+
+	while((thisdynamics.T_global > 60 )&& (thisdynamics.T_global < duration)){
+			thisdynamics.SetAcceleratorPedalPosition(0);
+			thisdynamics.T_brk[1]=50000;
+		    eachstep();
+	}
+
+
 	std::cerr << "finished " << std::endl;
 
 

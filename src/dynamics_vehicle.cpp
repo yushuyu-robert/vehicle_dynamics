@@ -8,8 +8,8 @@
 #include "dynamics_vehicle.h"
 
 
-dynamics::dynamics(){
-
+dynamics::dynamics()
+{
 	///////////////////the parameters of the vehicle//////////////////////
 
 	PI = 3.14159265;
@@ -107,8 +107,6 @@ dynamics::dynamics(){
 	state_global.T_new_req = 0;
 	state_global.Ttop = 0;
 
-
-
 	//time step:
 	T_samp = 1;
 	T_global = 0;
@@ -116,20 +114,17 @@ dynamics::dynamics(){
 	agear = 6;
 	agear_diff = 0;
 
-	T_emax = 0;
 	omega_e = 0;
-	Te = 0;
+ 	Te = 0;
 
 }
 
-void dynamics::te(int x){
-
-}
 
 
 void dynamics::diff_equation(state_vehicle &state, input_vehicle &input,  double t_sim, diff_vehicle &out){
 	//the differential equation of all the dynamics
 
+	(void) t_sim;
 	int i = 0;
 	//input:
 
@@ -225,11 +220,17 @@ void dynamics::diff_equation(state_vehicle &state, input_vehicle &input,  double
 	double T_req = T_bmax*0.01*B_ped;
 
 	//test:
-	T_brk[0] = T_b_general/2;
-	T_brk[1] = T_b_general/2;
-
-	T_brk[0] = 0;
-	T_brk[1] = 0;
+//	T_brk[0] = T_b_general/2;
+//	T_brk[1] = T_b_general/2;
+//
+//	T_brk[0] = 0;
+//	T_brk[1] = 0;
+	for(int j = 0; j < 2; j++){
+		if(omega_w[j] < 0)
+			T_brk[j] = -abs_dynamics(T_brk[j]);
+		else if(omega_w[j] > 0)
+			T_brk[j] =  abs_dynamics(T_brk[j]);
+	}
 
 
 	//body:
@@ -304,7 +305,11 @@ void dynamics::diff_equation(state_vehicle &state, input_vehicle &input,  double
 	omega_e = omega_c;
 	omega_e_dot =  omega_c_dot;
 
-	if (omega_e < 3)
+	double T_emax;
+
+	//A_ped = 10; //test
+  //  A_ped = T_global * 10;
+	if  ( (omega_e < 3) && (A_ped > 0))
 	{
 //		Teaped=10;
 //		T_emax = 10;
@@ -313,8 +318,6 @@ void dynamics::diff_equation(state_vehicle &state, input_vehicle &input,  double
 
 	T_emax = CalcEngineMaxTorque(omega_e);  //3.30
 
-	A_ped = 10; //test
-  //  A_ped = T_global * 10;
 	double Teaped;
 	Teaped = A_ped*0.01*T_emax;
 
@@ -362,10 +365,10 @@ void dynamics::diff_equation(state_vehicle &state, input_vehicle &input,  double
 
 	double k_speed_wtoe = i_final*i_gear;
 	double	k_tau_ctow = eta_tr*i_gear*eta_fd*i_final;
-	double f2[2];
-	for (i=0; i<2; i++){
-    	f2[i] =  Fw[0][i] * rw[i] + T_roll[i] + T_brk[i];
-	}
+//	double f2[2];
+//	for (i=0; i<2; i++){
+//    	f2[i] =  Fw[0][i] * rw[i] + T_roll[i] + T_brk[i];
+//	}
 	//Tc = (Iw[1] * Te + k_speed_wtoe*Je*f2[1])/(Iw[1]  + k_speed_wtoe*Je*k_tau_ctow); //according to Je*\dot omega_e = Te - Tc
 	//Tc = Te;
 
@@ -402,8 +405,7 @@ void dynamics::diff_equation(state_vehicle &state, input_vehicle &input,  double
 		T_prop[1] = max_dynamics(Twr, 0);
 	}
 
-//	T_prop[0] = 50; //test
-//	T_prop[1] = 50;  //test
+
 
 
 	//derivative part:
@@ -469,10 +471,6 @@ void dynamics::diff_equation(state_vehicle &state, input_vehicle &input,  double
 		else
 			agear_diff = 0;
 	}
-
-
-
-
 
 
 	////////test only, Feb. 12///
@@ -555,7 +553,7 @@ void dynamics::integrator(void){
 		{
 			//4-order:
 		case 0:
-			state_vehicle x1, x2, x3, x4;
+			state_vehicle  x2, x3, x4;
 			diff_vehicle k1, k2, k3, k4;
 
 			diff_equation(state_global, input_global,  T_global, k1);
@@ -694,30 +692,8 @@ double dynamics::abs_dynamics(double a){
 }
 
 double dynamics::CalcEngineMaxTorque(double m_engineSpeed) {
-
-//	std::vector<std::pair<double, double> >  const torqueLookupTable;
-//	= {
-//    std::pair<double, double>(0.0, 0.0),
-//    std::pair<double, double>(62.8318, 1660.0),
-//    std::pair<double, double>(73.3038, 1880.0),
-//    std::pair<double, double>(83.775, 2240.0),
-//    std::pair<double, double>(94.247, 2900.0),
-//    std::pair<double, double>(104.719, 3550.0),
-//    std::pair<double, double>(115.191, 3550.0),
-//    std::pair<double, double>(125.663, 3550.0),
-//    std::pair<double, double>(136.135, 3550.0),
-//    std::pair<double, double>(146.607, 3550.0),
-//    std::pair<double, double>(157.079, 3470.0),
-//    std::pair<double, double>(167.551, 3310.0),
-//    std::pair<double, double>(178.023, 3120.0),
-//    std::pair<double, double>(188.495, 2880.0),
-//    std::pair<double, double>(198.967, 2660.0),
-//    std::pair<double, double>(209.439, 1680.0),
-//    std::pair<double, double>(219.911, 0.0)
-//  };
-
 	int size = 17;
-	double torqueLookupTable[size][2] =
+	double torqueLookupTable[17][2] =
 	{	  {0.0, 0.0},
 			  {62.8318, 1660.0},
 			  {73.3038, 1880.0},
@@ -745,7 +721,7 @@ double dynamics::CalcEngineMaxTorque(double m_engineSpeed) {
 	return 0.0;
 	}
 
-	for (uint32_t i = 0; i < size - 1; i++) {
+	for (int i = 0; i < size - 1; i++) {
 		double const x1 = torqueLookupTable[i][0];
 		double const x2 = torqueLookupTable[i+1][0];
 
@@ -785,10 +761,6 @@ double dynamics::GetYawAcceleration() const{
 }
 double dynamics::GetYawVelocity() const{
 	return state_global.omega_body[2];
-}
-
-double dynamics::CalcEngineMaxTorque() const{
-	return T_emax;
 }
 
 double dynamics::GetAcceleratorPedalPosition() const{
