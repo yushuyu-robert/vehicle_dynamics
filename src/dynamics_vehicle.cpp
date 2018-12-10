@@ -9,7 +9,7 @@
 
 
 dynamics::dynamics():
-state_global({{0,0,0},{0,0,0},{0,0},0,0,0}),
+state_global({{2,0,0},{0,0,0},{0,0},0,0,0}),
 diff_global({{0,0,0},{0,0,0},{0,0},0,0,0}),
 input_global({0,0,0}),
 PI (3.14159265),
@@ -23,6 +23,13 @@ lf ( 1.68),  //FH16
 lr ( 1.715),   //FH16
 Izz ( 41340),  //FH16
 Je ( 4),  //flywheel inertia, FH16
+  a(1.68),
+  b(1.715),
+  cf (3.4812e+05),
+  cr (3.5537e+05),
+  m (9840),
+  Iz (41340),
+  psi_dot_com ( 0),
 Efactor ( 0.5), ////fh16
 i_final ( 3.46),  //FH16
 i_gear(11.73),
@@ -123,6 +130,7 @@ Te ( 0)
 		diff_global.vb_dot[i] = 0;  //dot of velocity of body
 		diff_global.omegab_dot[i] = 0;  //dot of angular velocity of body
 	}
+        state_global.v_body[0] = 2;
 
 	for (int i = 0; i < 2; i++){
 	//the angular velocity of the wheel
@@ -158,10 +166,14 @@ void dynamics::diff_equation(state_vehicle &state, input_vehicle &input,  double
 	int i = 0;
 	//input:
 
-	double A_ped = input.A_ped;   //pedal
-	double B_ped = input.B_ped;  //brake
-	double steering_angle = input.steering_angle;
+//	double A_ped = input.A_ped;   //pedal
+//	double B_ped = input.B_ped;  //brake
+//	double steering_angle = input.steering_angle;
 
+        double steering_angle = input.steering_angle;
+        double acc_x = input.acc_x;
+
+        /*
 	/////////////////////////states/////////////////////////////////////
 	//the velocity of the vehicle, expressed in the body frame of the vehicle
 	double v_body[3];
@@ -476,7 +488,38 @@ void dynamics::diff_equation(state_vehicle &state, input_vehicle &input,  double
 			agear_diff = -1;
 		else
 			agear_diff = 0;
-	}
+        }*/
+
+        //dynamics in the paper, input is steer angle and x-acc
+        double xp_dot = state.v_body[0];
+        double yp_dot = state.v_body[1];
+        double psi_dot = state.omega_body[2];
+        double epsi = state.epsi;
+       // double ey = state.ey;
+        // double s = state.s;
+
+
+        if (state.v_body[0]> 1e-1)
+        {
+            //linerized model:
+            out.vb_dot[0] = yp_dot*psi_dot + acc_x;   //dot xp_dot
+            out.vb_dot[1] = -xp_dot*psi_dot -2*(cf+cr)/(m*xp_dot)*yp_dot-2*(a*cf-b*cr)/m/xp_dot*psi_dot + 2*cf/m*steering_angle;   // dot yp_dot
+            out.omegab_dot[2] = -2*(a*cf-b*cr)/Iz/xp_dot*yp_dot-2*(a*a*cf+b*b*cr)/Iz/xp_dot*psi_dot + 2*a*cf/Iz*steering_angle;   //dot  psi_dot
+            out.epsi_dot =  psi_dot - psi_dot_com;    // dot epsi
+            out.ey_dot =  yp_dot*cos(epsi) + xp_dot*sin(epsi);    // dot ey
+            out.s_dot =  xp_dot*cos(epsi)-yp_dot*sin(epsi);     // dot s
+        }
+        else
+        {
+            //linerized model:
+            out.vb_dot[0] = 0;   //dot xp_dot
+            out.vb_dot[1] =  0;   // dot yp_dot
+            out.omegab_dot[2] =  0;   //dot  psi_dot
+            out.epsi_dot =  0;    // dot epsi
+            out.ey_dot =  0;    // dot ey
+            out.s_dot =  0 ;     // dot s
+        }
+
 
 
 	////////test only, Feb. 12///
@@ -558,74 +601,89 @@ void dynamics::integrator(void){
 	{
 		{
 			//4-order:
-		case 0:
-			state_vehicle  x2, x3, x4;
-			diff_vehicle k1, k2, k3, k4;
+        case 0:
+                state_vehicle  x2, x3, x4;
+                diff_vehicle k1, k2, k3, k4;
 
-			diff_equation(state_global, input_global,  T_global, k1);
+                diff_equation(state_global, input_global,  T_global, k1);
 
-			x2.T_b_general = state_global.T_b_general+ 0.5*T_samp*k1.T_b_dot_general;
-			x2.Ttop = state_global.Ttop+ 0.5*T_samp*k1.Ttop_dot;
-			x2.T_new_req = state_global.T_new_req+ 0.5*T_samp*k1.T_new_req_dot;
-			for(int i = 0; i < 3; i++){
-				x2.v_body[i] = state_global.v_body[i] + 0.5*k1.vb_dot[i]*T_samp;
-				x2.omega_body[i] = state_global.omega_body[i] + 0.5*k1.omegab_dot[i]*T_samp;
-			}
-			for(int j = 0; j < 2; j++){
-				x2.omega_w[j] = 0.5*k1.omega_wheel_dot[j]*T_samp + state_global.omega_w[j];
-			}
-			diff_equation(x2, input_global,  T_global+0.5*T_samp, k2);
+                x2.T_b_general = state_global.T_b_general+ 0.5*T_samp*k1.T_b_dot_general;
+                x2.Ttop = state_global.Ttop+ 0.5*T_samp*k1.Ttop_dot;
+                x2.T_new_req = state_global.T_new_req+ 0.5*T_samp*k1.T_new_req_dot;
+                x2.epsi = state_global.epsi + 0.5*T_samp*k1.epsi_dot;
+                x2.ey = state_global.ey + 0.5*T_samp*k1.ey_dot;
+                x2.s = state_global.s + 0.5*T_samp*k1.s_dot;
+                for(int i = 0; i < 3; i++){
+                        x2.v_body[i] = state_global.v_body[i] + 0.5*k1.vb_dot[i]*T_samp;
+                        x2.omega_body[i] = state_global.omega_body[i] + 0.5*k1.omegab_dot[i]*T_samp;
+                }
+                for(int j = 0; j < 2; j++){
+                        x2.omega_w[j] = 0.5*k1.omega_wheel_dot[j]*T_samp + state_global.omega_w[j];
+                }
+                diff_equation(x2, input_global,  T_global+0.5*T_samp, k2);
 
-			x3.T_b_general = state_global.T_b_general+ 0.5*T_samp*k2.T_b_dot_general;
-			x3.Ttop = state_global.Ttop+ 0.5*T_samp*k2.Ttop_dot;
-			x3.T_new_req = state_global.T_new_req+ 0.5*T_samp*k2.T_new_req_dot;
-			for(int i = 0; i < 3; i++){
-				x3.v_body[i] = state_global.v_body[i] + 0.5*k2.vb_dot[i]*T_samp;
-				x3.omega_body[i] = state_global.omega_body[i] + 0.5*k2.omegab_dot[i]*T_samp;
-			}
-			for(int j = 0; j < 2; j++){
-				x3.omega_w[j] = 0.5*k2.omega_wheel_dot[j]*T_samp + state_global.omega_w[j];
-			}
-			diff_equation(x3, input_global,  T_global + 0.5*T_samp, k3);
+                x3.T_b_general = state_global.T_b_general+ 0.5*T_samp*k2.T_b_dot_general;
+                x3.Ttop = state_global.Ttop+ 0.5*T_samp*k2.Ttop_dot;
+                x3.T_new_req = state_global.T_new_req+ 0.5*T_samp*k2.T_new_req_dot;
+                x3.epsi = state_global.epsi + 0.5*T_samp*k2.epsi_dot;
+                x3.ey = state_global.ey + 0.5*T_samp*k2.ey_dot;
+                x3.s = state_global.s + 0.5*T_samp*k2.s_dot;
+                for(int i = 0; i < 3; i++){
+                        x3.v_body[i] = state_global.v_body[i] + 0.5*k2.vb_dot[i]*T_samp;
+                        x3.omega_body[i] = state_global.omega_body[i] + 0.5*k2.omegab_dot[i]*T_samp;
+                }
+                for(int j = 0; j < 2; j++){
+                        x3.omega_w[j] = 0.5*k2.omega_wheel_dot[j]*T_samp + state_global.omega_w[j];
+                }
+                diff_equation(x3, input_global,  T_global + 0.5*T_samp, k3);
 
-			x4.T_b_general = state_global.T_b_general+ T_samp*k3.T_b_dot_general;
-			x4.Ttop = state_global.Ttop+ T_samp*k3.Ttop_dot;
-			x4.T_new_req = state_global.T_new_req+  T_samp*k3.T_new_req_dot;
-			for(int i = 0; i < 3; i++){
-				x4.v_body[i] = state_global.v_body[i] + k3.vb_dot[i]*T_samp;
-				x4.omega_body[i] = state_global.omega_body[i] + k3.omegab_dot[i]*T_samp;
-			}
-			for(int j = 0; j < 2; j++){
-				x4.omega_w[j] = k3.omega_wheel_dot[j]*T_samp + state_global.omega_w[j];
-			}
-			diff_equation(x4, input_global,  T_global + T_samp, k4);
+                x4.T_b_general = state_global.T_b_general+ T_samp*k3.T_b_dot_general;
+                x4.Ttop = state_global.Ttop+ T_samp*k3.Ttop_dot;
+                x4.T_new_req = state_global.T_new_req+  T_samp*k3.T_new_req_dot;
+                x4.epsi = state_global.epsi + 0.5*T_samp*k3.epsi_dot;
+                x4.ey = state_global.ey + 0.5*T_samp*k3.ey_dot;
+                x4.s = state_global.s + 0.5*T_samp*k3.s_dot;
+                for(int i = 0; i < 3; i++){
+                        x4.v_body[i] = state_global.v_body[i] + k3.vb_dot[i]*T_samp;
+                        x4.omega_body[i] = state_global.omega_body[i] + k3.omegab_dot[i]*T_samp;
+                }
+                for(int j = 0; j < 2; j++){
+                        x4.omega_w[j] = k3.omega_wheel_dot[j]*T_samp + state_global.omega_w[j];
+                }
+                diff_equation(x4, input_global,  T_global + T_samp, k4);
 
 
-			state_global.T_b_general = state_global.T_b_general+ T_samp*(k1.T_b_dot_general +
-			2*k2.T_b_dot_general + 2*k3.T_b_dot_general+ k4.T_b_dot_general)/6;
-			state_global.Ttop = state_global.Ttop+ T_samp*(k1.Ttop_dot +
-					2*k2.Ttop_dot + 2*k3.Ttop_dot+ k4.Ttop_dot)/6;
-			state_global.T_new_req = state_global.T_new_req+  T_samp*(k1.T_new_req_dot +
-					2*k2.T_new_req_dot + 2*k3.T_new_req_dot+ k4.T_new_req_dot)/6;
-			for(int i = 0; i < 3; i++){
-				state_global.v_body[i] = state_global.v_body[i] + T_samp*(
-						k1.vb_dot[i] + 2*k2.vb_dot[i] + 2*k3.vb_dot[i] + k4.vb_dot[i])/6;
-				state_global.omega_body[i] = state_global.omega_body[i] + (
-						k1.omegab_dot[i] + 2* k2.omegab_dot[i] + 2*k3.omegab_dot[i] + k4.omegab_dot[i])*T_samp/6;
-			}
-			for(int j = 0; j < 2; j++){
-				state_global.omega_w[j] = state_global.omega_w[j] +  (
-						k1.omega_wheel_dot[j] + 2*k2.omega_wheel_dot[j] + 2* k3.omega_wheel_dot[j] + k4.omega_wheel_dot[j])*T_samp/6;
-			}
+                state_global.T_b_general = state_global.T_b_general+ T_samp*(k1.T_b_dot_general +
+                2*k2.T_b_dot_general + 2*k3.T_b_dot_general+ k4.T_b_dot_general)/6;
+                state_global.Ttop = state_global.Ttop+ T_samp*(k1.Ttop_dot +
+                                2*k2.Ttop_dot + 2*k3.Ttop_dot+ k4.Ttop_dot)/6;
+                state_global.T_new_req = state_global.T_new_req+  T_samp*(k1.T_new_req_dot +
+                                2*k2.T_new_req_dot + 2*k3.T_new_req_dot+ k4.T_new_req_dot)/6;
+                for(int i = 0; i < 3; i++){
+                        state_global.v_body[i] = state_global.v_body[i] + T_samp*(
+                                        k1.vb_dot[i] + 2*k2.vb_dot[i] + 2*k3.vb_dot[i] + k4.vb_dot[i])/6;
+                        state_global.omega_body[i] = state_global.omega_body[i] + (
+                                        k1.omegab_dot[i] + 2* k2.omegab_dot[i] + 2*k3.omegab_dot[i] + k4.omegab_dot[i])*T_samp/6;
+                }
+                for(int j = 0; j < 2; j++){
+                        state_global.omega_w[j] = state_global.omega_w[j] +  (
+                                        k1.omega_wheel_dot[j] + 2*k2.omega_wheel_dot[j] + 2* k3.omega_wheel_dot[j] + k4.omega_wheel_dot[j])*T_samp/6;
+                }
+                state_global.epsi = state_global.epsi+T_samp*(k1.epsi_dot + 2*k2.epsi_dot + 2*k3.epsi_dot+ k4.epsi_dot)/6;
+                state_global.ey = state_global.ey+T_samp*(k1.ey_dot + 2*k2.ey_dot + 2*k3.ey_dot+ k4.ey_dot)/6;
+                state_global.s = state_global.s+T_samp*(k1.s_dot + 2*k2.s_dot + 2*k3.s_dot+ k4.s_dot)/6;
 
-			T_global = T_global+T_samp;
-			diff_global.vb_dot[0] = ( k1.vb_dot[0] + 2*k2.vb_dot[0] + 2*k3.vb_dot[0] + k4.vb_dot[0])/6;
-			diff_global.omegab_dot[0] = ( k1.omegab_dot[0] + 2*k2.omegab_dot[0] + 2*k3.omegab_dot[0] + k4.omegab_dot[0])/6;
-			diff_global.omegab_dot[1] = ( k1.omegab_dot[1] + 2*k2.omegab_dot[1] + 2*k3.omegab_dot[1] + k4.omegab_dot[1])/6;
-			diff_global.omega_wheel_dot[1] = ( k1.omega_wheel_dot[1] +
-					2*k2.omega_wheel_dot[1] + 2*k3.omega_wheel_dot[1] + k4.omega_wheel_dot[1])/6;
+                T_global = T_global+T_samp;
+                diff_global.vb_dot[0] = ( k1.vb_dot[0] + 2*k2.vb_dot[0] + 2*k3.vb_dot[0] + k4.vb_dot[0])/6;
+                diff_global.omegab_dot[0] = ( k1.omegab_dot[0] + 2*k2.omegab_dot[0] + 2*k3.omegab_dot[0] + k4.omegab_dot[0])/6;
+                diff_global.omegab_dot[1] = ( k1.omegab_dot[1] + 2*k2.omegab_dot[1] + 2*k3.omegab_dot[1] + k4.omegab_dot[1])/6;
+                diff_global.omega_wheel_dot[1] = ( k1.omega_wheel_dot[1] +
+                                2*k2.omega_wheel_dot[1] + 2*k3.omega_wheel_dot[1] + k4.omega_wheel_dot[1])/6;
+                diff_global.epsi_dot= ( k1.epsi_dot + 2*k2.epsi_dot + 2*k3.epsi_dot + k4.epsi_dot)/6;
+                diff_global.ey_dot= ( k1.ey_dot + 2*k2.ey_dot + 2*k3.ey_dot + k4.ey_dot)/6;
+                diff_global.s_dot= ( k1.s_dot + 2*k2.s_dot + 2*k3.s_dot + k4.s_dot)/6;
 
-			break;
+                break;
 		}
 
 
