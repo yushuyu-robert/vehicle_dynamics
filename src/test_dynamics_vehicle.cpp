@@ -42,9 +42,9 @@ int main(int argc, char **argv)
 
 	thisdynamics.T_samp = timer;
 
-	double duration = 30;
+        double duration = 2000;
 
-	while(thisdynamics.T_global <= 20 ){
+        while(thisdynamics.T_global <= 20 ){
 		thisdynamics.SetAcceleratorPedalPosition(5*thisdynamics.T_global);
 	    eachstep();
 	}

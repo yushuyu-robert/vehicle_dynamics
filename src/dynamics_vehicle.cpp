@@ -11,7 +11,7 @@
 dynamics::dynamics():
 state_global({{0,0,0},{0,0,0},{0,0},0,0,0}),
 diff_global({{0,0,0},{0,0,0},{0,0},0,0,0}),
-input_global({1,2,3}),
+input_global({0,0,0}),
 PI (3.14159265),
 cp ( 20),  //parameter of cornering stiffness
 mu ( 0.9),   //friction coefficient
@@ -532,8 +532,8 @@ void dynamics::diff_equation(state_vehicle &state, input_vehicle &input,  double
 //         << "	sy[0]:" << sy[0]
 //           << "	sy[1]:" << sy[1] << std::endl;
 //
-	std::cerr  << "Te: " << Te << "	Temx: " << T_emax << "  Engine speed: " << omega_e
-			<<"  speed f: " << omega_f<<std::endl;
+//	std::cerr  << "Te: " << Te << "	Temx: " << T_emax << "  Engine speed: " << omega_e
+//			<<"  speed f: " << omega_f<<std::endl;
 //
 //	std::cerr << "T_emax:" << T_emax << std::endl;
 //
@@ -653,20 +653,20 @@ void dynamics::integrator(void){
 	//agear
 	agear = agear_diff + agear;
 
- 	std::cerr << "angular velocity of wheel: " << state_global.omega_w[0]  << "," <<  state_global.omega_w[1] << std::endl;
+ //       std::cerr << "angular velocity of wheel: " << state_global.omega_w[0]  << "," <<  state_global.omega_w[1] << std::endl;
 ////	std::cerr << "angular acc of wheel:  " << diff_global.omega_wheel_dot[0] << ","  << diff_global.omega_wheel_dot[1] << std::endl;
 //
-	std::cerr << "body velocity (x, y, rot z): " << state_global.v_body[0] << ","
-			<< state_global.v_body[1] << "," << state_global.omega_body[2] << std::endl;
+       std::cerr << "body velocity (x, y, rot z): " << state_global.v_body[0] << ","
+                        << state_global.v_body[1] << "," << state_global.omega_body[2] << std::endl;
 ////	std::cerr << "body acc (x, y, rot z): " << diff_global.vb_dot[0]  << ","
 ////			<< diff_global.vb_dot[1]  << "," << diff_global.omegab_dot[2] << std::endl;
 //
-	std::cerr << "i_gear: " << i_gear
-<< "	a_gear: " << agear << "	diff_gear: " << agear_diff << std::endl;
+ //       std::cerr << "i_gear: " << i_gear
+//<< "	a_gear: " << agear << "	diff_gear: " << agear_diff << std::endl;
 
-	std::cerr << "Time: "   << T_global << std::endl;
+        std::cerr << "Time: "   << T_global << std::endl;
 
-    std::cerr << std::endl;
+ //   std::cerr << std::endl;
 
 }
 
