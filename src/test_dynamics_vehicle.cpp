@@ -46,7 +46,7 @@ int main(int argc, char **argv)
 
         while(thisdynamics.T_global <= 20 ){
 		thisdynamics.SetAcceleratorPedalPosition(5*thisdynamics.T_global);
-                thisdynamics.input_global.acc_x = 3;
+                thisdynamics.input_global.acc_x = 2.1;
 
 	    eachstep();
 	}
