@@ -656,7 +656,7 @@ void dynamics::integrator(void){
  //       std::cerr << "angular velocity of wheel: " << state_global.omega_w[0]  << "," <<  state_global.omega_w[1] << std::endl;
 ////	std::cerr << "angular acc of wheel:  " << diff_global.omega_wheel_dot[0] << ","  << diff_global.omega_wheel_dot[1] << std::endl;
 //
-       std::cerr << "body velocity (x, y, rot z): " << state_global.v_body[0] << ","
+       std::cout << "body velocity (x, y, rot z): " << state_global.v_body[0] << ","
                         << state_global.v_body[1] << "," << state_global.omega_body[2] << std::endl;
 ////	std::cerr << "body acc (x, y, rot z): " << diff_global.vb_dot[0]  << ","
 ////			<< diff_global.vb_dot[1]  << "," << diff_global.omegab_dot[2] << std::endl;
@@ -664,7 +664,7 @@ void dynamics::integrator(void){
  //       std::cerr << "i_gear: " << i_gear
 //<< "	a_gear: " << agear << "	diff_gear: " << agear_diff << std::endl;
 
-        std::cerr << "Time: "   << T_global << std::endl;
+        std::cout << "Time: "   << T_global << std::endl;
 
  //   std::cerr << std::endl;
 

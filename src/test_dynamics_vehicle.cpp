@@ -46,20 +46,25 @@ int main(int argc, char **argv)
     double time_elaps = 0 ;
 
 	state_vehicle  state_recur;
+	diff_vehicle diff_recur;
 	state_recur = thisdynamics.state_global;
+	diff_recur = thisdynamics.diff_global;
 	while(time_elaps <= 20 ){
         //test:
 		dynamics atdynamics;
 		atdynamics.setinitialstate(state_recur);
+		atdynamics.diff_global = diff_recur;
  		atdynamics.SetAcceleratorPedalPosition(5*time_elaps);
 		atdynamics.integrator();
 		state_recur = atdynamics.state_global;
+		diff_recur = atdynamics.diff_global;
 		time_elaps = time_elaps+ 0.001;
-	   //eachstep();
+		thisdynamics.SetAcceleratorPedalPosition(5*time_elaps);
+		thisdynamics.integrator();
 	}
      //    double duration = 60;
 
-    /*    while(thisdynamics.T_global <= 20 ){
+   /*  while(thisdynamics.T_global <= 20 ){
 		thisdynamics.SetAcceleratorPedalPosition(5*thisdynamics.T_global);
 	    eachstep();
  	}*/
