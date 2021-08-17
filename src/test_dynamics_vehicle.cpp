@@ -43,17 +43,26 @@ int main(int argc, char **argv)
 	thisdynamics.T_samp = timer;
 
 	double duration = 30;
+    double time_elaps = 0 ;
 
-	while(thisdynamics.T_global <= 20 ){
-		thisdynamics.SetAcceleratorPedalPosition(5*thisdynamics.T_global);
-	    eachstep();
+	state_vehicle  state_recur;
+	state_recur = thisdynamics.state_global;
+	while(time_elaps <= 20 ){
+        //test:
+		dynamics atdynamics;
+		atdynamics.setinitialstate(state_recur);
+ 		atdynamics.SetAcceleratorPedalPosition(5*time_elaps);
+		atdynamics.integrator();
+		state_recur = atdynamics.state_global;
+		time_elaps = time_elaps+ 0.001;
+	   //eachstep();
 	}
 
-	while((thisdynamics.T_global > 20 )&& (thisdynamics.T_global < duration)){
+	/*while((thisdynamics.T_global > 20 )&& (thisdynamics.T_global < duration)){
 			thisdynamics.SetAcceleratorPedalPosition(0);
 			thisdynamics.SetBrakePedalPosition(50);
 		    eachstep();
-	}
+	}*/
 
 
 	std::cerr << "finished " << std::endl;
@@ -85,6 +94,7 @@ void inputCallback(const vehicle_dynamics::vehicle_inputConstPtr& input){
 
 void eachstep(void){
 
+	thisdynamics.setinitialstate(thisdynamics.state_global);
 	thisdynamics.integrator();
 
 

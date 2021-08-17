@@ -793,6 +793,10 @@ void dynamics::SetBrakePedalPosition(double pos){
 	input_global.B_ped = pos;
 }
 
+void dynamics::setinitialstate(state_vehicle &state_ini){
+	state_global = state_ini;
+}
+
 int32_t dynamics::GetGear() const{
 	return agear;
 }

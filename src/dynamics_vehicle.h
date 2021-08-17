@@ -79,6 +79,8 @@ public:
 	double GetRearWheelSpeed() const;
 	double GetRoadWheelAngle() const;
 	void SetRoadWheelAngle(double);
+	//configure the initial state:
+	void setinitialstate(state_vehicle &state_ini);
 
 	state_vehicle state_global;
 	diff_vehicle diff_global;
