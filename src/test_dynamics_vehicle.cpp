@@ -42,7 +42,7 @@ int main(int argc, char **argv)
 
 	thisdynamics.T_samp = timer;
 
-	double duration = 30;
+ 	double duration = 30;
     double time_elaps = 0 ;
 
 	state_vehicle  state_recur;
@@ -57,10 +57,16 @@ int main(int argc, char **argv)
 		time_elaps = time_elaps+ 0.001;
 	   //eachstep();
 	}
+     //    double duration = 60;
+
+    /*    while(thisdynamics.T_global <= 20 ){
+		thisdynamics.SetAcceleratorPedalPosition(5*thisdynamics.T_global);
+	    eachstep();
+ 	}*/
 
 	/*while((thisdynamics.T_global > 20 )&& (thisdynamics.T_global < duration)){
 			thisdynamics.SetAcceleratorPedalPosition(0);
-			thisdynamics.SetBrakePedalPosition(50);
+                        thisdynamics.SetBrakePedalPosition(0);
 		    eachstep();
 	}*/
 
