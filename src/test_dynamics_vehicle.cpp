@@ -57,7 +57,7 @@ int main(int argc, char **argv)
 		atdynamics.setinitialstate(state_recur);
 		atdynamics.diff_global = diff_recur;
 		atdynamics.state_global = dynamics_iter.state_global;
-		atdynamics.agear_diff = dynamics_iter.agear_diff;
+		//atdynamics.agear_diff = dynamics_iter.agear_diff;
 		atdynamics.agear = dynamics_iter.agear;  //important, should be recorded each time
 
  		atdynamics.SetAcceleratorPedalPosition(5*time_elaps);
@@ -69,13 +69,13 @@ int main(int argc, char **argv)
 		thisdynamics.SetAcceleratorPedalPosition(5*time_elaps);
 		//thisdynamics.integrator();
 	}
-	while((time_elaps > 20 )&& (time_elaps < duration)){
+	/*while((time_elaps > 20 )&& (time_elaps < duration)){
 		dynamics atdynamics;
 				atdynamics.setinitialstate(state_recur);
 				atdynamics.diff_global = diff_recur;
 		 		atdynamics.SetAcceleratorPedalPosition(100);
 		 		atdynamics.state_global = dynamics_iter.state_global;
-		 		atdynamics.agear_diff = dynamics_iter.agear_diff;
+		 		//atdynamics.agear_diff = dynamics_iter.agear_diff;
 				atdynamics.agear = dynamics_iter.agear; //important, should be recorded each time
 
 				atdynamics.integrator();
@@ -85,7 +85,7 @@ int main(int argc, char **argv)
 				time_elaps = time_elaps+ 0.001;
 				thisdynamics.SetAcceleratorPedalPosition(100);
 				//thisdynamics.integrator();
-	}
+	}*/
      //    double duration = 60;
 
    /*  while(thisdynamics.T_global <= 20 ){
